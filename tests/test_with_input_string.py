@@ -1,6 +1,6 @@
 import pytest
 
-from ..main import *
+from spellscript_refactor.refactor.refactor import *
 
 # pytest --pyargs spellscript_refactor
 input_as_string =\

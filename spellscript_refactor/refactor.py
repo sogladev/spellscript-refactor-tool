@@ -1,6 +1,6 @@
 import re
 
-from util.colors import Color, color
+from .util.colors import Color, color
 
 def find_start_last_index(lines_to_search):
     start_index = None
@@ -69,7 +69,6 @@ def find_content_statements(lines, start_index):
     content_index_start, content_index_end = find_content_start_end_index(lines[start_index:])
     content_index_start += start_index
     content_index_end += start_index
-
     content_statements = lines[content_index_start+1:content_index_end]
     return content_statements
 
@@ -170,14 +169,3 @@ def format_first_block_in_file(path_in, path_out) -> None:
         path_out = path_in
     with open(path_out, 'w') as file:
         file.write('\n'.join(lines))
-
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('source_file', type=str)
-    parser.add_argument('dest_file', type=str)
-    args = parser.parse_args()
-    format_first_block_in_file(args.source_file, args.dest_file)
-
-if __name__ == '__main__':
-    main()

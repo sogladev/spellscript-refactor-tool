@@ -1,9 +1,8 @@
 import pytest
 
-from spellscript_refactor.main import *
+from spellscript_refactor.refactor.refactor import *
 
-# pytest --pyargs spellscript_refactor
-FILENAME = "spellscript_refactor/test/boss_yoggsaron.cpp"
+FILENAME = "tests/test_with_input_file/boss_yoggsaron.cpp"
 
 @pytest.fixture
 def lines():
@@ -101,4 +100,3 @@ def test_convert_function_block(lines, expect, expect_spell_string):
     assert len(expect) == len(out)
     for i in range(len(out)):
         assert out[i] == expect[i], f"{i-1}:\'{out[i-1]}\'{i}:\'{out[i]}\'\'{expect[i]}\'"
-

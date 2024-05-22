@@ -1,11 +1,10 @@
 import pytest
 
-from spellscript_refactor.main import *
+from spellscript_refactor.refactor.refactor import *
 
-# pytest --pyargs spellscript_refactor
-FILENAME_READ = "spellscript_refactor/test/boss_yoggsaron.cpp"
-FILENAME_WRITE = "spellscript_refactor/test/boss_yoggsaron_write.cpp"
-FILENAME_EXPECTED = "spellscript_refactor/test/boss_yoggsaron_expected.cpp"
+FILENAME_READ = "tests/test_write_replace_file/boss_yoggsaron_read.cpp"
+FILENAME_WRITE = "tests/test_write_replace_file/boss_yoggsaron_write.cpp"
+FILENAME_EXPECTED = "tests/test_write_replace_file/boss_yoggsaron_expected.cpp"
 
 @pytest.fixture
 def expect():
@@ -26,4 +25,3 @@ def test_format_first_block_in_file(expect):
     assert len(lines) == len(expect)
     for i in range(len(lines)):
         assert lines[i] == expect[i], f"\'{i}:\'{lines[i]}\'\'{expect[i]}\'"
-

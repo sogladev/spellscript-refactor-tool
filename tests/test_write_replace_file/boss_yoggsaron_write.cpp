@@ -2255,182 +2255,267 @@ class spell_yogg_saron_malady_of_the_mind_aura : public AuraScript
 };
 
 // 63802 - Brain Link
-class spell_yogg_saron_brain_link_aura : public AuraScript
+class spell_yogg_saron_brain_link : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_yogg_saron_brain_link_aura);
+public:
+    spell_yogg_saron_brain_link() : SpellScriptLoader("spell_yogg_saron_brain_link") { }
 
-    void HandleOnEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+    class spell_yogg_saron_brain_link_AuraScript : public AuraScript
     {
-        PreventDefaultAction();
-        Player* target = nullptr;
-        Map::PlayerList const& pList = GetUnitOwner()->GetMap()->GetPlayers();
-        uint8 _offset = urand(0, pList.getSize() - 1);
-        uint8 _counter = 0;
-        for(Map::PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr, ++_counter)
-        {
-            if (itr->GetSource() == GetUnitOwner() || GetUnitOwner()->GetDistance(itr->GetSource()) > 50.0f || !itr->GetSource()->IsAlive() || itr->GetSource()->IsGameMaster())
-                continue;
+        PrepareAuraScript(spell_yogg_saron_brain_link_AuraScript);
 
-            if (_counter <= _offset || !target)
-                target = itr->GetSource();
+        void HandleOnEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            PreventDefaultAction();
+            Player* target = nullptr;
+            Map::PlayerList const& pList = GetUnitOwner()->GetMap()->GetPlayers();
+            uint8 _offset = urand(0, pList.getSize() - 1);
+            uint8 _counter = 0;
+            for(Map::PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr, ++_counter)
+            {
+                if (itr->GetSource() == GetUnitOwner() || GetUnitOwner()->GetDistance(itr->GetSource()) > 50.0f || !itr->GetSource()->IsAlive() || itr->GetSource()->IsGameMaster())
+                    continue;
+
+                if (_counter <= _offset || !target)
+                    target = itr->GetSource();
+                else
+                    break;
+            }
+
+            if (!target)
+                SetDuration(0);
             else
-                break;
+                _targetGUID = target->GetGUID();
         }
 
-        if (!target)
-            SetDuration(0);
-        else
-            _targetGUID = target->GetGUID();
+        void OnPeriodic(AuraEffect const*  /*aurEff*/)
+        {
+            Unit* owner = GetUnitOwner();
+            if (!owner)
+            {
+                SetDuration(0);
+                return;
+            }
+
+            Unit* _target = ObjectAccessor::GetUnit(*owner, _targetGUID);
+            if (!_target || !_target->IsAlive() || std::fabs(owner->GetPositionZ() - _target->GetPositionZ()) > 10.0f) // Target or owner underground
+            {
+                SetDuration(0);
+                return;
+            }
+
+            if (owner->GetDistance(_target) > 20.0f)
+            {
+                owner->CastSpell(_target, SPELL_BRAIN_LINK_DAMAGE, true);
+                owner->CastSpell(owner, SPELL_BRAIN_LINK_DAMAGE, true);
+            }
+            else
+                owner->CastSpell(_target, SPELL_BRAIN_LINK_OK, true);
+        }
+
+        void Register() override
+        {
+            OnEffectApply += AuraEffectApplyFn(spell_yogg_saron_brain_link_AuraScript::HandleOnEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            OnEffectPeriodic += AuraEffectPeriodicFn(spell_yogg_saron_brain_link_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+        }
+
+    protected:
+        ObjectGuid _targetGUID;
+    };
+
+    AuraScript* GetAuraScript() const override
+    {
+        return new spell_yogg_saron_brain_link_AuraScript();
     }
 
-    void OnPeriodic(AuraEffect const*  /*aurEff*/)
+    class spell_yogg_saron_brain_link_SpellScript : public SpellScript
     {
-        Unit* owner = GetUnitOwner();
-        if (!owner)
+        PrepareSpellScript(spell_yogg_saron_brain_link_SpellScript);
+
+        void FilterTargets(std::list<WorldObject*>& targets)
         {
-            SetDuration(0);
-            return;
+            std::list<WorldObject*> tempList;
+            for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+                if ((*itr)->GetPositionZ() > 300.0f)
+                    tempList.push_back(*itr);
+
+            targets.clear();
+            for (std::list<WorldObject*>::iterator itr = tempList.begin(); itr != tempList.end(); ++itr)
+                targets.push_back(*itr);
         }
 
-        Unit* _target = ObjectAccessor::GetUnit(*owner, _targetGUID);
-        if (!_target || !_target->IsAlive() || std::fabs(owner->GetPositionZ() - _target->GetPositionZ()) > 10.0f) // Target or owner underground
+        void Register() override
         {
-            SetDuration(0);
-            return;
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_brain_link_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
         }
+    };
 
-        if (owner->GetDistance(_target) > 20.0f)
-        {
-            owner->CastSpell(_target, SPELL_BRAIN_LINK_DAMAGE, true);
-            owner->CastSpell(owner, SPELL_BRAIN_LINK_DAMAGE, true);
-        }
-        else
-            owner->CastSpell(_target, SPELL_BRAIN_LINK_OK, true);
-    }
-
-    void Register() override
+    SpellScript* GetSpellScript() const override
     {
-        OnEffectApply += AuraEffectApplyFn(spell_yogg_saron_brain_link_aura::HandleOnEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
-        OnEffectPeriodic += AuraEffectPeriodicFn(spell_yogg_saron_brain_link_aura::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+        return new spell_yogg_saron_brain_link_SpellScript();
     }
 };
 
 // 64465 - Shadow Beacon
-class spell_yogg_saron_shadow_beacon_aura : public AuraScript
+class spell_yogg_saron_shadow_beacon : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_yogg_saron_shadow_beacon_aura);
+    public:
+        spell_yogg_saron_shadow_beacon() : SpellScriptLoader("spell_yogg_saron_shadow_beacon") { }
 
-        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        class spell_yogg_saron_shadow_beacon_AuraScript : public AuraScript
         {
-            if (Creature* target = GetTarget()->ToCreature())
-            {
-                target->SetEntry(NPC_MARKED_IMMORTAL_GUARDIAN);
-            }
-        }
+            PrepareAuraScript(spell_yogg_saron_shadow_beacon_AuraScript);
 
-        void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Creature* target = GetTarget()->ToCreature())
+                {
+                    target->SetEntry(NPC_MARKED_IMMORTAL_GUARDIAN);
+                }
+            }
+
+            void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Creature* target = GetTarget()->ToCreature())
+                {
+                    target->SetEntry(NPC_IMMORTAL_GUARDIAN);
+                }
+            }
+
+            void Register() override
+            {
+                AfterEffectApply += AuraEffectApplyFn(spell_yogg_saron_shadow_beacon_AuraScript::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+                AfterEffectRemove += AuraEffectRemoveFn(spell_yogg_saron_shadow_beacon_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
         {
-            if (Creature* target = GetTarget()->ToCreature())
-            {
-                target->SetEntry(NPC_IMMORTAL_GUARDIAN);
-            }
+            return new spell_yogg_saron_shadow_beacon_AuraScript();
         }
-
-    void Register() override
-    {
-        AfterEffectApply += AuraEffectApplyFn(spell_yogg_saron_shadow_beacon_aura::OnApply, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-        AfterEffectRemove += AuraEffectRemoveFn(spell_yogg_saron_shadow_beacon_aura::OnRemove, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL, AURA_EFFECT_HANDLE_REAL);
-    }
 };
 
 // 65206 - Destabilization Matrix
-class spell_yogg_saron_destabilization_matrix_aura : public AuraScript
+class spell_yogg_saron_destabilization_matrix : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_yogg_saron_destabilization_matrix_aura);
+public:
+    spell_yogg_saron_destabilization_matrix() : SpellScriptLoader("spell_yogg_saron_destabilization_matrix") { }
 
-    void HandleDummyEffect(SpellEffIndex effIndex)
+    class spell_yogg_saron_destabilization_matrix_SpellScript : public SpellScript
     {
-        PreventHitDefaultEffect(effIndex);
-        if (Unit* target = GetHitUnit())
-            GetCaster()->CastSpell(target, SPELL_DESTABILIZATION_MATRIX_ATTACK, false);
-    }
+        PrepareSpellScript(spell_yogg_saron_destabilization_matrix_SpellScript);
 
-    void FilterTargets(std::list<WorldObject*>& targets)
+        void HandleDummyEffect(SpellEffIndex effIndex)
+        {
+            PreventHitDefaultEffect(effIndex);
+            if (Unit* target = GetHitUnit())
+                GetCaster()->CastSpell(target, SPELL_DESTABILIZATION_MATRIX_ATTACK, false);
+        }
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            WorldObject* target = nullptr;
+            for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+                if (!(*itr)->ToUnit()->HasAura(SPELL_DESTABILIZATION_MATRIX_ATTACK))
+                {
+                    target = *itr;
+                    break;
+                }
+
+            targets.clear();
+            if (target)
+                targets.push_back(target);
+        }
+
+        void Register() override
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_yogg_saron_destabilization_matrix_SpellScript::HandleDummyEffect, EFFECT_0, SPELL_EFFECT_DUMMY);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_destabilization_matrix_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        WorldObject* target = nullptr;
-        for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-            if (!(*itr)->ToUnit()->HasAura(SPELL_DESTABILIZATION_MATRIX_ATTACK))
-            {
-                target = *itr;
-                break;
-            }
-
-        targets.clear();
-        if (target)
-            targets.push_back(target);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_yogg_saron_destabilization_matrix::HandleDummyEffect, EFFECT_0, SPELL_EFFECT_DUMMY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_destabilization_matrix::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        return new spell_yogg_saron_destabilization_matrix_SpellScript();
     }
 };
 
 // 64172 - Titanic Storm
-class spell_yogg_saron_titanic_storm_aura : public AuraScript
+class spell_yogg_saron_titanic_storm : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_yogg_saron_titanic_storm_aura);
+public:
+    spell_yogg_saron_titanic_storm() : SpellScriptLoader("spell_yogg_saron_titanic_storm") { }
 
-    void HandleDummyEffect(SpellEffIndex effIndex)
+    class spell_yogg_saron_titanic_storm_SpellScript : public SpellScript
     {
-        PreventHitDefaultEffect(effIndex);
-        if (Unit* target = GetHitUnit())
-            Unit::Kill(GetCaster(), target);
-    }
+        PrepareSpellScript(spell_yogg_saron_titanic_storm_SpellScript);
 
-    void FilterTargets(std::list<WorldObject*>& targets)
+        void HandleDummyEffect(SpellEffIndex effIndex)
+        {
+            PreventHitDefaultEffect(effIndex);
+            if (Unit* target = GetHitUnit())
+                Unit::Kill(GetCaster(), target);
+        }
+
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            WorldObject* target = nullptr;
+            for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+                if ((*itr)->ToUnit()->HasAura(SPELL_WEAKENED))
+                {
+                    target = *itr;
+                    break;
+                }
+
+            targets.clear();
+            if (target)
+                targets.push_back(target);
+        }
+
+        void Register() override
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_yogg_saron_titanic_storm_SpellScript::HandleDummyEffect, EFFECT_0, SPELL_EFFECT_DUMMY);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_titanic_storm_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        WorldObject* target = nullptr;
-        for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-            if ((*itr)->ToUnit()->HasAura(SPELL_WEAKENED))
-            {
-                target = *itr;
-                break;
-            }
-
-        targets.clear();
-        if (target)
-            targets.push_back(target);
-    }
-
-    void Register() override
-    {
-        OnEffectHitTarget += SpellEffectFn(spell_yogg_saron_titanic_storm::HandleDummyEffect, EFFECT_0, SPELL_EFFECT_DUMMY);
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_titanic_storm::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+        return new spell_yogg_saron_titanic_storm_SpellScript();
     }
 };
 
 // 64164, 64168 - Lunatic Gaze
-class spell_yogg_saron_lunatic_gaze_aura : public AuraScript
+class spell_yogg_saron_lunatic_gaze : public SpellScriptLoader
 {
-    PrepareAuraScript(spell_yogg_saron_lunatic_gaze_aura);
+public:
+    spell_yogg_saron_lunatic_gaze() : SpellScriptLoader("spell_yogg_saron_lunatic_gaze") { }
 
-    void FilterTargets(std::list<WorldObject*>& targets)
+    class spell_yogg_saron_lunatic_gaze_SpellScript : public SpellScript
     {
-        std::list<WorldObject*> tmplist;
-        for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-            if ((*itr)->HasInArc(M_PI, GetCaster()))
-                tmplist.push_back(*itr);
+        PrepareSpellScript(spell_yogg_saron_lunatic_gaze_SpellScript);
 
-        targets.clear();
-        for (std::list<WorldObject*>::iterator itr = tmplist.begin(); itr != tmplist.end(); ++itr)
-            targets.push_back(*itr);
-    }
+        void FilterTargets(std::list<WorldObject*>& targets)
+        {
+            std::list<WorldObject*> tmplist;
+            for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+                if ((*itr)->HasInArc(M_PI, GetCaster()))
+                    tmplist.push_back(*itr);
 
-    void Register() override
+            targets.clear();
+            for (std::list<WorldObject*>::iterator itr = tmplist.begin(); itr != tmplist.end(); ++itr)
+                targets.push_back(*itr);
+        }
+
+        void Register() override
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_lunatic_gaze_SpellScript::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ENEMY);
+        }
+    };
+
+    SpellScript* GetSpellScript() const override
     {
-        OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_lunatic_gaze::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ENEMY);
+        return new spell_yogg_saron_lunatic_gaze_SpellScript();
     }
 };
 
@@ -2955,11 +3040,11 @@ void AddSC_boss_yoggsaron()
 
     // SPELLS
     RegisterSpellScript(spell_yogg_saron_malady_of_the_mind_aura);
-    RegisterSpellScript(spell_yogg_saron_brain_link_aura);
-    RegisterSpellScript(spell_yogg_saron_shadow_beacon_aura);
-    RegisterSpellScript(spell_yogg_saron_destabilization_matrix_aura);
-    RegisterSpellScript(spell_yogg_saron_titanic_storm_aura);
-    RegisterSpellScript(spell_yogg_saron_lunatic_gaze_aura);
+    new spell_yogg_saron_brain_link();
+    new spell_yogg_saron_shadow_beacon();
+    new spell_yogg_saron_destabilization_matrix();
+    new spell_yogg_saron_titanic_storm();
+    new spell_yogg_saron_lunatic_gaze();
     new spell_yogg_saron_protective_gaze();
     new spell_yogg_saron_empowered();
     new spell_yogg_saron_insane_periodic_trigger();
