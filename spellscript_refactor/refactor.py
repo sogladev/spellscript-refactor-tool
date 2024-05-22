@@ -81,7 +81,7 @@ def format_register_statements(register_statements):
             c = ''
         else:
             c = 8*' ' + c.lstrip()
-            c = c.replace('_AuraScript','_aura')
+            c = c.replace('_AuraScript','_aura').replace('_aura_aura','_aura')
             c = c.replace('_SpellScript','')
         register_statements_format.append(c)
     for i, dbg_out in enumerate(register_statements):
@@ -139,7 +139,7 @@ def format_content_statements(content_statements):
             c = ''
         elif 8*' ' in c:
             c = (4*' ').join(c.split(4*' ')[1:])
-        c = c.replace('_AuraScript','_aura')
+        c = c.replace('_AuraScript','_aura').replace('_aura_aura','_aura')
         c = c.replace('_SpellScript','')
         content_statements_format.append(c)
     for i, dbg_out in enumerate(content_statements):
@@ -213,7 +213,7 @@ def find_spell_block_in_pair(lines, script_type):
 
 def format_script_name(script_name, script_type):
     if script_type == ScriptType.AURA:
-        return script_name + '_aura'
+        return (script_name + '_aura').replace('_aura_aura','_aura')
     elif script_type == ScriptType.SPELL:
         return script_name
     elif script_type == ScriptType.PAIR:
