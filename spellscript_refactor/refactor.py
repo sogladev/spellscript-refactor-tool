@@ -115,11 +115,12 @@ def find_variables(lines, start_index=0) -> tuple[bool, int, int]:
         if foundRegister and line == 8*" "+"}":
             start = i + 1
             foundEndRegister = True
+            logger.debug(f"{i+start_index} {line}")
         if foundEndRegister and ("protected:" in line or "public:" in line or "private:" in line):
-            logger.debug(f"HERE {i+start_index}")
+            logger.debug(f"{i+start_index}")
             logger.debug(line)
             foundVariables = True
-        if foundRegister and line == '    };':
+        if foundRegister and (line == '    };' or line == '};'):
             end = i
             break
     return foundVariables, start+start_index, end+start_index
