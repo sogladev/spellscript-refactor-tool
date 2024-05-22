@@ -32,3 +32,5 @@ public:
         return new spell_yogg_saron_malady_of_the_mind_AuraScript();
     }
 };
+
+    new spell_yogg_saron_malady_of_the_mind();

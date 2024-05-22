@@ -43,3 +43,5 @@ public:
         return new spell_yogg_saron_titanic_storm_SpellScript();
     }
 };
+
+    new spell_yogg_saron_titanic_storm();

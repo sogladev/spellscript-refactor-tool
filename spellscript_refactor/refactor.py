@@ -132,9 +132,9 @@ def convert_function_block(lines: list[str]) -> tuple[str, str, int, int, str]:
 register_formatted+\
 """
     }
-};\n"""
+};"""
 
-    for i, dbg_out in enumerate(lines[start_index:last_index]):
+    for i, dbg_out in enumerate(lines[start_index:last_index+1]):
         logger.debug(f"before:{i:03}:{dbg_out}")
     for i, dbg_out in enumerate(out_formatted.split('\n')):
         logger.debug(f"after :{i:03}:{dbg_out}")
@@ -193,17 +193,20 @@ def replace_new_with_RegisterSpellScript(lines, script_name):
             logger.debug(f"before:{lines[i]}")
             logger.debug(f"after :{new_line}")
             return lines
+    logger.error("No register name found")
 
 def format_first_block_in_file(path_in, path_out) -> None:
     logger.info(f"{path_in=}")
+    logger.info(f"{path_out=}")
     with open(path_in, 'r') as file:
         lines = file.read();
         lines = lines.split('\n')
     logger.debug(f"{len(lines)=} {path_in=}")
     out, spell_string, start_index, last_index, script_name = convert_function_block(lines)
-    lines = lines[:start_index] + out.split('\n') + lines[last_index+2:] # TODO: Investigate why +2
-    lines = replace_new_with_RegisterSpellScript(lines, script_name)
-    if not path_out:
-        path_out = path_in
+    lines = lines[:start_index] + out.split('\n') + lines[last_index+1:]
+    lines: list[str] = replace_new_with_RegisterSpellScript(lines, script_name)
+
+    for i, dbg_out in enumerate(lines):
+        logger.debug(f"{i:03}:{dbg_out}")
     with open(path_out, 'w') as file:
         file.write('\n'.join(lines))
