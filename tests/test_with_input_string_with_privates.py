@@ -4,107 +4,49 @@ from spellscript_refactor.refactor import *
 
 # pytest --pyargs spellscript_refactor
 input_as_string =\
-"""// 63802 - Brain Link
-class spell_yogg_saron_brain_link : public SpellScriptLoader
+"""// 63305 - Grim Reprisal
+class spell_yogg_saron_grim_reprisal : public SpellScriptLoader
 {
 public:
-    spell_yogg_saron_brain_link() : SpellScriptLoader("spell_yogg_saron_brain_link") { }
+    spell_yogg_saron_grim_reprisal() : SpellScriptLoader("spell_yogg_saron_grim_reprisal") { }
 
-    class spell_yogg_saron_brain_link_AuraScript : public AuraScript
+    class spell_yogg_saron_grim_reprisal_AuraScript : public AuraScript
     {
-        PrepareAuraScript(spell_yogg_saron_brain_link_AuraScript);
+        PrepareAuraScript(spell_yogg_saron_grim_reprisal_AuraScript);
 
-        void HandleOnEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        bool Validate(SpellInfo const* /*spellInfo*/) override
         {
-            PreventDefaultAction();
-            Player* target = nullptr;
-            Map::PlayerList const& pList = GetUnitOwner()->GetMap()->GetPlayers();
-            uint8 _offset = urand(0, pList.getSize() - 1);
-            uint8 _counter = 0;
-            for(Map::PlayerList::const_iterator itr = pList.begin(); itr != pList.end(); ++itr, ++_counter)
-            {
-                if (itr->GetSource() == GetUnitOwner() || GetUnitOwner()->GetDistance(itr->GetSource()) > 50.0f || !itr->GetSource()->IsAlive() || itr->GetSource()->IsGameMaster())
-                    continue;
-
-                if (_counter <= _offset || !target)
-                    target = itr->GetSource();
-                else
-                    break;
-            }
-
-            if (!target)
-                SetDuration(0);
-            else
-                _targetGUID = target->GetGUID();
+            return ValidateSpellInfo({ SPELL_GRIM_REPRISAL_DAMAGE });
         }
 
-        void OnPeriodic(AuraEffect const*  /*aurEff*/)
+        void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
         {
-            Unit* owner = GetUnitOwner();
-            if (!owner)
+            DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+
+            if (!damageInfo || !damageInfo->GetDamage())
             {
-                SetDuration(0);
                 return;
             }
 
-            Unit* _target = ObjectAccessor::GetUnit(*owner, _targetGUID);
-            if (!_target || !_target->IsAlive() || std::fabs(owner->GetPositionZ() - _target->GetPositionZ()) > 10.0f) // Target or owner underground
-            {
-                SetDuration(0);
-                return;
-            }
-
-            if (owner->GetDistance(_target) > 20.0f)
-            {
-                owner->CastSpell(_target, SPELL_BRAIN_LINK_DAMAGE, true);
-                owner->CastSpell(owner, SPELL_BRAIN_LINK_DAMAGE, true);
-            }
-            else
-                owner->CastSpell(_target, SPELL_BRAIN_LINK_OK, true);
+            int32 damage = CalculatePct(static_cast<int32>(damageInfo->GetDamage()), 60);
+            GetTarget()->CastCustomSpell(SPELL_GRIM_REPRISAL_DAMAGE, SPELLVALUE_BASE_POINT0, damage, damageInfo->GetAttacker(), true, nullptr, aurEff);
         }
 
         void Register() override
         {
-            OnEffectApply += AuraEffectApplyFn(spell_yogg_saron_brain_link_AuraScript::HandleOnEffectApply, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY, AURA_EFFECT_HANDLE_REAL);
-            OnEffectPeriodic += AuraEffectPeriodicFn(spell_yogg_saron_brain_link_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_DUMMY);
+            OnEffectProc += AuraEffectProcFn(spell_yogg_saron_grim_reprisal_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
         }
-
-    protected:
-        ObjectGuid _targetGUID;
+    private:
+        uint8 someVariables;
+        bool anotherOne;
     };
 
     AuraScript* GetAuraScript() const override
     {
-        return new spell_yogg_saron_brain_link_AuraScript();
+        return new spell_yogg_saron_grim_reprisal_AuraScript();
     }
-
-    class spell_yogg_saron_brain_link_SpellScript : public SpellScript
-    {
-        PrepareSpellScript(spell_yogg_saron_brain_link_SpellScript);
-
-        void FilterTargets(std::list<WorldObject*>& targets)
-        {
-            std::list<WorldObject*> tempList;
-            for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-                if ((*itr)->GetPositionZ() > 300.0f)
-                    tempList.push_back(*itr);
-
-            targets.clear();
-            for (std::list<WorldObject*>::iterator itr = tempList.begin(); itr != tempList.end(); ++itr)
-                targets.push_back(*itr);
-        }
-
-        void Register() override
-        {
-            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_yogg_saron_brain_link_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
-        }
-    };
-
-    SpellScript* GetSpellScript() const override
-    {
-        return new spell_yogg_saron_brain_link_SpellScript();
-    }
-};"""
+};
+"""
 
 expected_output =\
 """class spell_yogg_saron_grim_reprisal_aura : public AuraScript
@@ -133,6 +75,10 @@ expected_output =\
     {
         OnEffectProc += AuraEffectProcFn(spell_yogg_saron_grim_reprisal_aura::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
     }
+
+private:
+    uint8 someVariables;
+    bool anotherOne;
 };"""
 
 @pytest.fixture
@@ -153,13 +99,14 @@ def test_always_passes():
 def test_find_start_last_index(lines):
     start_index, last_index = find_start_last_index(lines)
     assert start_index == 1
-    assert last_index == 38
+    assert last_index ==41
 
 def test_find_name_of_script(lines):
     assert find_name_of_script(lines) == "spell_yogg_saron_grim_reprisal"
 
-def test_is_aura_script(lines):
-    assert is_aura_script(lines) == True
+def test_get_script_type(lines):
+    start_index, last_index = find_start_last_index(lines)
+    assert get_script_type(lines, start_index) == ScriptType.AURA
 
 def test_find_register_start_end_index(lines):
     start_index, last_index = find_start_last_index(lines)
@@ -195,10 +142,8 @@ def test_format_content_start_end_index(lines):
     assert all(f.strip() != '' or (f.strip() == '' and f == '') for f in formatted_content_statements)
 
 def test_convert_function_block(lines, expect, expect_spell_string):
-    out, spell_string, start_index, last_index, _ = convert_function_block(lines)
-    assert spell_string.lstrip() == expect_spell_string
-    assert start_index == 1
-    assert last_index == 38
+    out, spell_type, start_index, last_index, _ = convert_function_block(lines)
+    assert spell_type == ScriptType.AURA
     assert expect == out
     out = out.split('\n')
     expect = expect.split('\n')

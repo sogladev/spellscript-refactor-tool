@@ -1,4 +1,10 @@
 import re
+from enum import Enum
+
+class ScriptType(Enum):
+    AURA = 1
+    SPELL = 2
+    PAIR = 3
 
 from .util.colors import Color, color
 from .util.logger import logger
@@ -7,9 +13,9 @@ def find_start_last_index(lines_to_search):
     start_index = None
     for i, line in enumerate(lines_to_search):
         if (start_index is None and re.match("class .* : public SpellScriptLoader", line)):
-            logger.debug(f"{i:,=} {line=}")
             start_index = i
         if start_index:
+            logger.debug(f"{i:,=} {line=}")
             if line.rstrip() == '};':
                 return start_index, i
     logger.error(color(f"No spells scripts found", Color.RED))
@@ -21,18 +27,33 @@ def find_name_of_script(lines_to_search, start_index=0):
             logger.debug(f"{name=}")
             return name
 
-def is_aura_script(lines_to_search):
-    for line in lines_to_search:
+def get_script_type(lines_to_search, start_index=0) -> ScriptType:
+    isAuraScript = None
+    isSpellScript = None
+    for line in lines_to_search[start_index:]:
+        logger.debug(f"line=")
         if "AuraScript" in line:
             logger.debug(f"AuraScript {line=}")
-            return False
-        if "SpellScript" in line:
+            isAuraScript = True
+        if "SpellScript" in line and not "SpellScriptLoader" in line:
             logger.debug(f"SpellScript {line=}")
-            return True
+            isSpellScript = True
+        if line.rstrip() == "};":
+            break
+    if isAuraScript and isSpellScript:
+        return ScriptType.PAIR
+    elif isAuraScript:
+        return ScriptType.AURA
+    elif isSpellScript:
+        return ScriptType.SPELL
+    else:
+        logger.error(color("Unable to determine type!", Color.RED))
 
 def find_register_start_end_index(lines_to_search, start_index=0):
     start = None
+    logger.debug(f"{start_index=}")
     for i, line in enumerate(lines_to_search[start_index:]):
+        logger.debug(f"{i:03};{line}")
         if 'void Register' in line:
            start = i
         if start:
@@ -82,6 +103,27 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 logger.debug(f"{absolute_start=},{absolute_end=}")
                 return start+start_index, i+start_index
 
+def find_variables(lines, start_index=0) -> tuple[bool, int, int]:
+    start = None
+    end = None
+    foundRegister = False
+    foundEndRegister = False
+    foundVariables = False
+    for i, line in enumerate(lines[start_index:]):
+        if 'void Register' in line:
+            foundRegister = True
+        if foundRegister and line == 8*" "+"}":
+            start = i + 1
+            foundEndRegister = True
+        if foundEndRegister and ("protected:" in line or "public:" in line or "private:" in line):
+            logger.debug(f"HERE {i+start_index}")
+            logger.debug(line)
+            foundVariables = True
+        if foundRegister and line == '    };':
+            end = i
+            break
+    return foundVariables, start+start_index, end+start_index
+
 def find_content_statements(lines, start_index):
     content_index_start, content_index_end = find_content_start_end_index(lines[start_index:])
     content_index_start += start_index
@@ -105,23 +147,30 @@ def format_content_statements(content_statements):
         logger.debug(f"after :{i:03}:{dbg_out}")
     return content_statements_format
 
-def convert_function_block(lines: list[str]) -> tuple[str, str, int, int, str]:
-    start_index, last_index = find_start_last_index(lines)
-    logger.debug(f"{start_index=}{last_index=}")
-    isSpellScript = not is_aura_script(lines[start_index:])
-    logger.debug(f"{isSpellScript=}")
-    type: str = 'SpellScript' if isSpellScript else 'AuraScript'
-    prepare: str = 'Spell' if isSpellScript else 'Aura'
-    script_name = find_name_of_script(lines[start_index:]) + ('' if isSpellScript else '_aura')
-    logger.debug(f"{script_name=}")
+def format_variables(variables):
+    formatted_variables = []
+    for c in variables:
+        if c.strip() == '':
+            continue
+        elif 4*' ' in c:
+            c = (4*' ').join(c.split(4*' ')[1:])
+        formatted_variables.append(c)
+    return formatted_variables
+
+def convert_aura_or_spell_script(lines, start_index, last_index, script_type, script_name) -> tuple[list[str], ScriptType, int, int, str]:
+    type = 'SpellScript' if script_type == ScriptType.SPELL else 'AuraScript'
+    prepare = 'Spell' if script_type == ScriptType.SPELL else 'Aura'
     register_statements = find_register_statements(lines, start_index)
     register_statements = format_register_statements(register_statements)
     content_statements = find_content_statements(lines, start_index)
     content_statements = format_content_statements(content_statements)
-    register_spellstring = f"RegisterSpellScript({script_name});"
-    logger.debug(f"{register_spellstring=}")
     content: str = '\n'.join(content_statements)
     register_formatted: str = '\n'.join(register_statements)
+    isVariables, start, end = find_variables(lines, start_index)
+    if not isVariables:
+        variables = ''
+    else:
+        variables = 2*'\n'+'\n'.join(format_variables(lines[start:end]))
     out_formatted = \
 """class """+script_name+""" : public """+type+"""\n{
     Prepare"""+prepare+"""Script("""+script_name+");\n"\
@@ -131,62 +180,77 @@ def convert_function_block(lines: list[str]) -> tuple[str, str, int, int, str]:
     {\n"""+\
 register_formatted+\
 """
-    }
+    }"""+variables+"""
 };"""
-
     for i, dbg_out in enumerate(lines[start_index:last_index+1]):
         logger.debug(f"before:{i:03}:{dbg_out}")
     for i, dbg_out in enumerate(out_formatted.split('\n')):
         logger.debug(f"after :{i:03}:{dbg_out}")
 
-    register_spellstring = f"RegisterSpellScript({script_name});"
-    logger.debug(f"{register_spellstring=}")
-    return out_formatted, register_spellstring, start_index, last_index, script_name
+    return out_formatted, script_type, start_index, last_index, script_name
 
-OFFSET = 0
-FILENAME = "/home/jelle/wd/wow/azerothcore-wotlk/src/server/scripts/Northrend/Ulduar/Ulduar/boss_yoggsaron.cpp"
+def find_spell_block_in_pair(lines, script_type):
+    reg = None
+    if script_type == ScriptType.AURA:
+        reg = ".*class .*_AuraScript : public AuraScript.*"
+    elif script_type == ScriptType.SPELL:
+        reg = ".*class .*_SpellScript : public SpellScript.*"
+    else:
+        logger.error(color("Invalid type", Color.RED))
 
-input =\
-"""
-class spell_yogg_saron_malady_of_the_mind : public SpellScriptLoader
-{
-public:
-    spell_yogg_saron_malady_of_the_mind() : SpellScriptLoader("spell_yogg_saron_malady_of_the_mind") { }
+    start_index = None
+    end_index = None
+    for i, line in enumerate(lines):
+        if (start_index is None and re.match(reg, line)):
+            start_index = i
+        if start_index:
+            logger.debug(f"{i:,=} {line=}")
+            if line.rstrip() == '    };':
+                end_index = i
+                break
+    return lines[start_index:end_index+1]
 
-    class spell_yogg_saron_malady_of_the_mind_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_yogg_saron_malady_of_the_mind_AuraScript);
+def format_script_name(script_name, script_type):
+    if script_type == ScriptType.AURA:
+        return script_name + '_aura'
+    elif script_type == ScriptType.SPELL:
+        return script_name
+    elif script_type == ScriptType.PAIR:
+        return script_name
 
-        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            GetUnitOwner()->ApplySpellImmune(SPELL_DEATH_RAY_DAMAGE_REAL, IMMUNITY_ID, SPELL_DEATH_RAY_DAMAGE_REAL, true);
-        }
+def convert_function_block(lines: list[str]) -> tuple[str, ScriptType, int, int, str]:
+    start_index, last_index = find_start_last_index(lines)
+    logger.debug(f"{start_index=}{last_index=}")
+    script_type = get_script_type(lines, start_index)
+    logger.debug(f"{script_type=}")
+    script_name = find_name_of_script(lines, start_index)
+    formatted_script_name = format_script_name(script_name, script_type)
+    logger.debug(f"{script_name=}")
+    if script_type != ScriptType.PAIR:
+        return convert_aura_or_spell_script(lines, start_index, last_index, script_type, formatted_script_name)
+    spell_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.SPELL)
+    formatted_script_name = format_script_name(script_name, ScriptType.SPELL)
+    converted_spell, _, _, _, _ = convert_aura_or_spell_script(spell_script_lines, 0, len(spell_script_lines), ScriptType.SPELL, formatted_script_name)
 
-        void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            GetUnitOwner()->ApplySpellImmune(SPELL_DEATH_RAY_DAMAGE_REAL, IMMUNITY_ID, SPELL_DEATH_RAY_DAMAGE_REAL, false);
-            GetUnitOwner()->CastCustomSpell(SPELL_MALADY_OF_THE_MIND_TRIGGER, SPELLVALUE_MAX_TARGETS, 1, GetUnitOwner(), true);
-        }
+    aura_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.AURA)
+    formatted_script_name = format_script_name(script_name, ScriptType.AURA)
+    converted_aura, _, _, _, _ = convert_aura_or_spell_script(aura_script_lines, 0, len(aura_script_lines), ScriptType.AURA, formatted_script_name)
 
-        void Register() override
-        {
-            OnEffectApply += AuraEffectApplyFn(spell_yogg_saron_malady_of_the_mind_AuraScript::OnApply, EFFECT_1, SPELL_AURA_MOD_FEAR, AURA_EFFECT_HANDLE_REAL);
-            OnEffectRemove += AuraEffectRemoveFn(spell_yogg_saron_malady_of_the_mind_AuraScript::OnRemove, EFFECT_1, SPELL_AURA_MOD_FEAR, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
+    return (converted_spell, converted_aura), script_type, start_index, last_index, script_name
 
-    AuraScript* GetAuraScript() const override
-    {
-        return new spell_yogg_saron_malady_of_the_mind_AuraScript();
-    }
-};
-"""
+def format_RegisterSpellScript(script_name, script_type: ScriptType) -> str:
+    if script_type == ScriptType.PAIR:
+        register_statement = f"    RegisterSpellAndAuraScriptPair({script_name}, {script_name}_aura);"
+    else:
+        register_statement = f"    RegisterSpellScript({script_name});"
+    logger.debug(f"{register_statement=}")
+    return register_statement
 
-def replace_new_with_RegisterSpellScript(lines, script_name):
+def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     script_name_search = "new "+script_name.replace('_aura','').replace('_spell','')
     for i, line in enumerate(lines):
         if script_name_search in line:
-            new_line = f"    RegisterSpellScript({script_name});"
+            new_line = format_RegisterSpellScript(script_name, script_type)
             lines[i] = new_line
             logger.debug(f"{script_name_search=}")
             logger.debug(f"{script_name=}")
@@ -195,16 +259,19 @@ def replace_new_with_RegisterSpellScript(lines, script_name):
             return lines
     logger.error("No register name found")
 
-def format_first_block_in_file(path_in, path_out) -> None:
+def format_first_block_in_file(path_in, path_out, skip=0) -> None:
     logger.info(f"{path_in=}")
     logger.info(f"{path_out=}")
     with open(path_in, 'r') as file:
         lines = file.read();
         lines = lines.split('\n')
     logger.debug(f"{len(lines)=} {path_in=}")
-    out, spell_string, start_index, last_index, script_name = convert_function_block(lines)
-    lines = lines[:start_index] + out.split('\n') + lines[last_index+1:]
-    lines: list[str] = replace_new_with_RegisterSpellScript(lines, script_name)
+    out, script_type, start_index, last_index, script_name = convert_function_block(lines[skip:])
+    if type(out) == tuple:
+        spell, aura = out
+        out = spell + 2*'\n' + aura
+    lines = lines[:start_index+skip] + out.split('\n') + lines[last_index+skip+1:]
+    lines: list[str] = replace_new_with_RegisterSpellScript(lines, script_name, script_type)
 
     for i, dbg_out in enumerate(lines):
         logger.debug(f"{i:03}:{dbg_out}")

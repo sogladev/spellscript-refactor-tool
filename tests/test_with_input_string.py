@@ -97,8 +97,9 @@ def test_find_start_last_index(lines):
 def test_find_name_of_script(lines):
     assert find_name_of_script(lines) == "spell_yogg_saron_grim_reprisal"
 
-def test_is_aura_script(lines):
-    assert is_aura_script(lines) == True
+def test_get_script_type(lines):
+    start_index, last_index = find_start_last_index(lines)
+    assert get_script_type(lines, start_index) == ScriptType.AURA
 
 def test_find_register_start_end_index(lines):
     start_index, last_index = find_start_last_index(lines)
@@ -134,8 +135,8 @@ def test_format_content_start_end_index(lines):
     assert all(f.strip() != '' or (f.strip() == '' and f == '') for f in formatted_content_statements)
 
 def test_convert_function_block(lines, expect, expect_spell_string):
-    out, spell_string, start_index, last_index, _ = convert_function_block(lines)
-    assert spell_string.lstrip() == expect_spell_string
+    out, spell_type, start_index, last_index, _ = convert_function_block(lines)
+    assert spell_type == ScriptType.AURA
     assert start_index == 1
     assert last_index == 38
     assert expect == out

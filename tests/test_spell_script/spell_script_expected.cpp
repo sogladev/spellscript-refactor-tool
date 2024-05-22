@@ -1,8 +1,8 @@
 
 // 64172 - Titanic Storm
-class spell_yogg_saron_titanic_storm_aura : public AuraScript
+class spell_yogg_saron_titanic_storm : public SpellScript
 {
-    PrepareAuraScript(spell_yogg_saron_titanic_storm_aura);
+    PrepareSpellScript(spell_yogg_saron_titanic_storm);
 
     void HandleDummyEffect(SpellEffIndex effIndex)
     {
@@ -33,4 +33,4 @@ class spell_yogg_saron_titanic_storm_aura : public AuraScript
     }
 };
 
-    RegisterSpellScript(spell_yogg_saron_titanic_storm_aura);
+    RegisterSpellScript(spell_yogg_saron_titanic_storm);
