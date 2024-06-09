@@ -1,6 +1,10 @@
 # Spellscript Refactor Tool
 Convert spellscript to new format
 
+This tool find the first SpellScript by searching for `public SpellScriptLoader` in a file and converts it. Use `--skip` to start at a specific line
+
+[See sample log./refactor.log](./refactor.log)
+
 Run tests
 ```
 pytest .
@@ -18,7 +22,5 @@ overwrite input_file
 python3 -m spellscript_refactor.main input_file input_file
 python3 -m spellscript_refactor.main input_file
 skip set amount of lines
-python3 -m spellscript_refactor.main input_file output_file 1200
+python3 -m spellscript_refactor.main input_file output_file --skip 1200
 ```
-
-[See sample log./refactor.log](./refactor.log)
