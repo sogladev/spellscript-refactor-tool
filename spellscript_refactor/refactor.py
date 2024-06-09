@@ -1,13 +1,13 @@
 import re
 from enum import Enum
 
+from .util.colors import Color, color
+from .util.logger import logger
+
 class ScriptType(Enum):
     AURA = 1
     SPELL = 2
     PAIR = 3
-
-from .util.colors import Color, color
-from .util.logger import logger
 
 def find_start_last_index(lines_to_search):
     start_index = None
