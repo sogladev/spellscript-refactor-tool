@@ -247,15 +247,24 @@ def format_RegisterSpellScript(script_name, script_type: ScriptType) -> str:
     logger.debug(f"{register_statement=}")
     return register_statement
 
+def remove_aura_spell_suffix(script_name):
+    script_name_without_aura_suffix = re.sub('_aura$', '', script_name)
+    script_name_without_aura_spell_suffix = re.sub('_spell$', '', script_name_without_aura_suffix)
+    return script_name_without_aura_spell_suffix
+
 def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
-    script_name_search = "new "+script_name.replace('_aura','').replace('_spell','')
+    script_name_search = "new "+ remove_aura_spell_suffix(script_name)
+    logger.debug(f"{script_name=}")
+    logger.debug(f"{script_type=}")
+    logger.debug(f"{script_name_search=}")
+    logger.debug(f"{lines}")
     for i, line in enumerate(lines):
         if script_name_search in line:
-            new_line = format_RegisterSpellScript(script_name, script_type)
-            lines[i] = new_line
             logger.debug(f"{script_name_search=}")
             logger.debug(f"{script_name=}")
+            new_line = format_RegisterSpellScript(script_name, script_type)
             logger.debug(f"before:{lines[i]}")
+            lines[i] = new_line
             logger.debug(f"after :{new_line}")
             return lines
     logger.error("No register name found")
