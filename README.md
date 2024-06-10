@@ -3,6 +3,8 @@ Convert spellscript to new format
 
 This tool find the first SpellScript by searching for `public SpellScriptLoader` in a file and converts it. Use `--skip` to start at a specific line
 
+Disclaimer: this tool is dumb. It does not add validate for used spells, enums for magic numbers, and may remove variables; some manual work is required but is a good first pass
+
 [See sample log./refactor.log](./refactor.log)
 
 Run tests
