@@ -19,20 +19,20 @@ pip install -e .
 
 Run main
 ```
-python3 -m spellscript_refactor.main input_file output_file
+python3 -m acore_spellscript_refactor.main input_file output_file
 overwrite input_file
-python3 -m spellscript_refactor.main input_file input_file
-python3 -m spellscript_refactor.main input_file
+python3 -m acore_spellscript_refactor.main input_file input_file
+python3 -m acore_spellscript_refactor.main input_file
 skip set amount of lines
-python3 -m spellscript_refactor.main input_file output_file --skip 1200
+python3 -m acore_spellscript_refactor.main input_file output_file --skip 1200
 ```
 
 run on script
 ```
-python3 -m spellscript_refactor.main `realpath boss_xt002.cpp` --skip 950
+python3 -m acore_spellscript_refactor.main `realpath boss_xt002.cpp` --skip 950
 ```
 
 Run on all `*cpp` in a folder
 ```
-ls *cpp | xargs -n 1 -I {} python3 -m spellscript_refactor.main `realpath {}`
+ls *cpp | xargs -n 1 -I {} python3 -m acore_spellscript_refactor.main `realpath {}`
 ```
