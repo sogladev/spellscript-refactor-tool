@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "acore_spellscript_refactor"
 readme = "README.md"
 description = "tool that finds the first SpellScript by searching for public SpellScriptLoader in a file and converts it to use registry macros"
-version = "1.0.3"
+version = "1.1.0"
 requires-python = ">=3.8"
 
 [project.urls]
