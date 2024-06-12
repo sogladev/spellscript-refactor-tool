@@ -4,5 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "spellscript_refactor"
+readme = "README.md"
+description = "tool that finds the first SpellScript by searching for public SpellScriptLoader in a file and converts it to use registry macros"
 version = "0.0.1"
 requires-python = ">=3.8"
+
+[project.urls]
+"Homepage" = "https://github.com/sogladev/spellscript-refactor-tool"
