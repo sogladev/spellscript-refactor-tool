@@ -29,7 +29,6 @@ public:
             }
 
             int32 damage = CalculatePct(static_cast<int32>(damageInfo->GetDamage()), 60);
-            GetTarget()->CastCustomSpell(SPELL_GRIM_REPRISAL_DAMAGE, SPELLVALUE_BASE_POINT0, damage, damageInfo->GetAttacker(), true, nullptr, aurEff);
         }
 
         void Register() override
@@ -65,7 +64,6 @@ expected_output =\
         }
 
         int32 damage = CalculatePct(static_cast<int32>(damageInfo->GetDamage()), 60);
-        GetTarget()->CastCustomSpell(SPELL_GRIM_REPRISAL_DAMAGE, SPELLVALUE_BASE_POINT0, damage, damageInfo->GetAttacker(), true, nullptr, aurEff);
     }
 
     void Register() override
@@ -92,7 +90,7 @@ def test_always_passes():
 def test_find_start_last_index(lines):
     start_index, last_index = find_start_last_index(lines)
     assert start_index == 1
-    assert last_index == 38
+    assert last_index == 37
 
 def test_find_name_of_script(lines):
     assert find_name_of_script(lines) == "spell_yogg_saron_grim_reprisal"
@@ -128,7 +126,7 @@ def test_format_content_start_end_index(lines):
     content_index_start, content_index_end = find_content_start_end_index(lines)
     content_statements = lines[content_index_start+1:content_index_end]
     formatted_content_statements = format_content_statements(content_statements);
-    assert len(formatted_content_statements) == 19
+    assert len(formatted_content_statements) == 18
     assert formatted_content_statements[1] == "    bool Validate(SpellInfo const* /*spellInfo*/) override"
     assert formatted_content_statements[2] == "    {"
     assert formatted_content_statements[3] == "        return ValidateSpellInfo({ SPELL_GRIM_REPRISAL_DAMAGE });"
@@ -138,7 +136,7 @@ def test_convert_function_block(lines, expect, expect_spell_string):
     out, spell_type, start_index, last_index, _ = convert_function_block(lines)
     assert spell_type == ScriptType.AURA
     assert start_index == 1
-    assert last_index == 38
+    assert last_index == 37
     assert expect == out
     out = out.split('\n')
     expect = expect.split('\n')

@@ -133,6 +133,11 @@ expected_output_aura =\
 {
     PrepareAuraScript(spell_yogg_saron_brain_link_aura);
 
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_BRAIN_LINK_DAMAGE, SPELL_BRAIN_LINK_OK });
+    }
+
     void HandleOnEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         PreventDefaultAction();
@@ -233,11 +238,6 @@ def test_find_spell_block_in_pair(lines, expect_spell):
     start_index, last_index = find_start_last_index(lines)
     spell_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.SPELL)
     assert len(expect_spell) == len(spell_script_lines)
-
-def test_find_spell_block_in_pair(lines, expect_aura):
-    start_index, last_index = find_start_last_index(lines)
-    aura_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.AURA)
-    assert len(expect_aura) == len(aura_script_lines)
 
 def test_convert_function_block(lines, expect, expect_spell, expect_aura):
     converted_pair, spell_type, start_index, last_index, _ = convert_function_block(lines)
