@@ -1,14 +1,17 @@
 import argparse
 
 from .refactor import format_first_block_in_file
-from .util.logger import logger
+from .util.logger import logger, enable_file_log
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('source_file', type=str)
     parser.add_argument('dest_file', nargs='?', type=str, default=None)
     parser.add_argument('--skip', type=int, default=0, help="amount of lines to skip")
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
+    if args.debug:
+        enable_file_log()
     if not args.dest_file:
         args.dest_file = args.source_file
     format_first_block_in_file(args.source_file, args.dest_file, skip=args.skip)
