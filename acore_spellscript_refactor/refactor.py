@@ -360,3 +360,11 @@ def format_first_block_in_file(path_in, path_out, skip=0) -> None:
         logger.debug(f"{i:03}:{dbg_out}")
     with open(path_out, 'w') as file:
         file.write('\n'.join(lines))
+
+    if script_type == ScriptType.AURA:
+        logger.info(color('Written query to script_name.sql', Color.GREEN))
+        with open('script_name.sql', 'a') as file:
+            sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`=XXXXX;\n""".format(script_name)
+            logger.debug(f"{sql_update_script_name=}")
+            file.write(sql_update_script_name)
+
