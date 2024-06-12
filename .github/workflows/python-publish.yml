@@ -17,10 +17,10 @@ permissions:
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
     environment: release
-
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python
