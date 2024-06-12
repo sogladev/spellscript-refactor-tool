@@ -22,6 +22,6 @@ def test_format_first_block_in_file(expect):
         lines = file.read();
         lines = lines.split('\n')
 
-    assert len(lines) == len(expect)
     for i in range(len(lines)):
         assert lines[i] == expect[i], f"\'{i}:\'{lines[i]}\'\'{expect[i]}\'"
+    assert len(lines) == len(expect)

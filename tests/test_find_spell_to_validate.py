@@ -12,8 +12,6 @@ def test_always_passes():
     ('t->CastSpell(t, 7171);', '7171'),
     ('me->CastCustomSpell(SPELL_ACTIVATE_CONSTRUCT, SPELLVALUE_MAX_TARGETS, 1, (Unit*)nullptr, false);', 'SPELL_ACTIVATE_CONSTRUCT'),
     ('GetUnitOwner()->ApplySpellImmune(SPELL_DEATH_RAY_DAMAGE_REAL, IMMUNITY_ID, SPELL_DEATH_RAY_DAMAGE_REAL, true);', 'SPELL_DEATH_RAY_DAMAGE_REAL'),
-
-
 ])
 
 def test_find_spell_to_validate(line, spell):
