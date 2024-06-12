@@ -10,7 +10,8 @@ Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may 
 - [x] convert AuraScript
 - [x] convert SpellScript
 - [x] convert Spell- and Aurascript Pairs
-- [x] Add `bool Validate...` if it does not exist already
+- [x] Add `bool Validate...` if needed and does not exist already
+- [x] Write `bool Validate...` correctly for most cases
 - [x] read/write to file
 - [x] `--skip` to specify line number to search for SpellScript
 - [x] `--debug` to write debug info to a `refactor.log` file

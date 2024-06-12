@@ -105,6 +105,11 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 return start+start_index, i+start_index
 
 def find_spell_to_validate(line) -> Union[str, None]:
+    def _to_valid_spell(spell) -> Union[str, None]:
+        if 'AurEff' in spell:
+            return None
+        return spell
+
     if '->CastCustomSpell(' in line:
         logger.debug(f"{line=}")
         try:
@@ -114,7 +119,7 @@ def find_spell_to_validate(line) -> Union[str, None]:
             logger.debug(f"strip needed? {spell=}")
             spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
             logger.debug(f"{spell=}")
-            return spell
+            return _to_valid_spell(spell)
         except IndexError:
             return
     if '->CastSpell(' in line:
@@ -126,7 +131,7 @@ def find_spell_to_validate(line) -> Union[str, None]:
             logger.debug(f"strip needed? {spell=}")
             spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
             logger.debug(f"{spell=}")
-            return spell
+            return _to_valid_spell(spell)
         except IndexError:
             return
     if '->ApplySpellImmune' in line:
@@ -138,7 +143,7 @@ def find_spell_to_validate(line) -> Union[str, None]:
             logger.debug(f"strip needed? {spell=}")
             spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
             logger.debug(f"{spell=}")
-            return spell
+            return _to_valid_spell(spell)
         except IndexError:
             return
     return None
