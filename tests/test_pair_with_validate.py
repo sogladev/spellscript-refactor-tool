@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 FILENAME_READ = "tests/test_pair_with_validate/boss_ignis_read.cpp"
 FILENAME_WRITE = "tests/test_pair_with_validate/boss_ignis_write.cpp"

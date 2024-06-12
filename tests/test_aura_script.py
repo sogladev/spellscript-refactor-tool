@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 FILENAME_READ = "tests/test_aura_script/aura_script_read.cpp"
 FILENAME_WRITE = "tests/test_aura_script/aura_script_write.cpp"

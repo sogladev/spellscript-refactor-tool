@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 def test_always_passes():
     assert True

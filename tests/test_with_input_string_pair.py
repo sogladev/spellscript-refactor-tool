@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 input_as_string =\
 """// 63802 - Brain Link

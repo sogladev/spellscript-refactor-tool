@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 FILENAME_READ = "tests/test_write_replace_file/boss_yoggsaron_read.cpp"
 FILENAME_WRITE = "tests/test_write_replace_file/boss_yoggsaron_write.cpp"

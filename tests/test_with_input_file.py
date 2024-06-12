@@ -1,6 +1,6 @@
 import pytest
 
-from spellscript_refactor.refactor import *
+from acore_spellscript_refactor.refactor import *
 
 FILENAME = "tests/test_with_input_file/boss_yoggsaron.cpp"
 
