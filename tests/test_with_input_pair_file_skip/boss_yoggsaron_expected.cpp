@@ -2292,6 +2292,11 @@ class spell_yogg_saron_brain_link_aura : public AuraScript
 {
     PrepareAuraScript(spell_yogg_saron_brain_link_aura);
 
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_BRAIN_LINK_DAMAGE, SPELL_BRAIN_LINK_OK });
+    }
+
     void HandleOnEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
     {
         PreventDefaultAction();

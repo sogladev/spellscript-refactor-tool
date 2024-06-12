@@ -2,7 +2,7 @@ import logging
 
 # Create a logger
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # Create a formatter to define the log format
 format = "%(levelname)s:%(filename)s:%(lineno)03d:%(funcName)20s():%(message)s"

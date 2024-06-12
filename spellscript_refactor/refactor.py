@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from typing import Union
 
 from .util.colors import Color, color
 from .util.logger import logger
@@ -103,6 +104,73 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 logger.debug(f"{absolute_start=},{absolute_end=}")
                 return start+start_index, i+start_index
 
+def find_spell_to_validate(line) -> Union[str, None]:
+    if '->CastCustomSpell(' in line:
+        logger.debug(f"{line=}")
+        try:
+            spell = line.split('->CastCustomSpell(')[1].split(',')[0]
+            logger.debug(f"{spell=}")
+            spell = spell.strip()
+            logger.debug(f"strip needed? {spell=}")
+            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
+            logger.debug(f"{spell=}")
+            return spell
+        except IndexError:
+            return
+    if '->CastSpell(' in line:
+        logger.debug(f"{line=}")
+        try:
+            spell = line.split('->CastSpell(')[1].split(',')[1]
+            logger.debug(f"{spell=}")
+            spell = spell.strip()
+            logger.debug(f"strip needed? {spell=}")
+            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
+            logger.debug(f"{spell=}")
+            return spell
+        except IndexError:
+            return
+    if '->ApplySpellImmune' in line:
+        logger.debug(f"{line=}")
+        try:
+            spell = line.split('->ApplySpellImmune')[1].split(',')[0]
+            logger.debug(f"{spell=}")
+            spell = spell.strip()
+            logger.debug(f"strip needed? {spell=}")
+            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
+            logger.debug(f"{spell=}")
+            return spell
+        except IndexError:
+            return
+    return None
+
+def format_spells(spells):
+    return ', '.join(spells)
+
+def format_validate_function(spells) -> str:
+    spells_formatted = format_spells(spells)
+    out ="""
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ """+spells_formatted+""" });
+    }\n"""
+    return out
+
+def create_validate_lines(lines_to_search, start_index=0) -> str:
+    logger.debug(f"{start_index=}")
+    spells = []
+    for i, line in enumerate(lines_to_search[start_index:]):
+        logger.debug(f"{i:03};{line}")
+        spell = find_spell_to_validate(line)
+        if spell is not None and spell not in spells:
+            spells.append(spell)
+        if 'void Register' in line:
+            break
+    if len(spells) == 0:
+        return ''
+    formatted = format_validate_function(spells)
+    logger.debug(f"{formatted=}")
+    return formatted
+
 def find_variables(lines, start_index=0) -> tuple[bool, int, int]:
     start = None
     end = None
@@ -158,13 +226,18 @@ def format_variables(variables):
         formatted_variables.append(c)
     return formatted_variables
 
+def is_validate_in_content(content_statements):
+    return any('bool Validate(' in c for c in content_statements)
+
 def convert_aura_or_spell_script(lines, start_index, last_index, script_type, script_name) -> tuple[list[str], ScriptType, int, int, str]:
     type = 'SpellScript' if script_type == ScriptType.SPELL else 'AuraScript'
     prepare = 'Spell' if script_type == ScriptType.SPELL else 'Aura'
     register_statements = find_register_statements(lines, start_index)
     register_statements = format_register_statements(register_statements)
     content_statements = find_content_statements(lines, start_index)
+    validate = create_validate_lines(lines, start_index) if not is_validate_in_content(content_statements) else ''
     content_statements = format_content_statements(content_statements)
+
     content: str = '\n'.join(content_statements)
     register_formatted: str = '\n'.join(register_statements)
     isVariables, start, end = find_variables(lines, start_index)
@@ -174,7 +247,7 @@ def convert_aura_or_spell_script(lines, start_index, last_index, script_type, sc
         variables = 2*'\n'+'\n'.join(format_variables(lines[start:end]))
     out_formatted = \
 """class """+script_name+""" : public """+type+"""\n{
-    Prepare"""+prepare+"""Script("""+script_name+");\n"\
+    Prepare"""+prepare+"""Script("""+script_name+");\n"+validate\
 +content+\
 """
     void Register() override
