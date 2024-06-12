@@ -13,7 +13,7 @@ Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may 
 - [x] Add `bool Validate...` if it does not exist already
 - [x] read/write to file
 - [x] `--skip` to specify line number to search for SpellScript
-- [] magic numbers to Enum
+- [ ] magic numbers to Enum
 
 [See sample log./refactor.log](https://github.com/sogladev/spellscript-refactor-tool/blob/main/refactor.log)
 
