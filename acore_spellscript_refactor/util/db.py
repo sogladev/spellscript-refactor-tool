@@ -8,5 +8,15 @@ MYDB = mysql.connector.connect(
   database="acore_world"
 )
 
-def db_lookup_ids(spell_script_name: str) -> list[str] :
-    return []
+def db_lookup_ids(script_name: str) -> list[int] :
+    mycursor = MYDB.cursor()
+
+    mycursor.execute(f"SELECT `spell_id` FROM `spell_script_names` WHERE `ScriptName` = '{script_name}'")
+
+    myresult = mycursor.fetchall()
+
+    ids = []
+    for x in myresult:
+        ids.append(x[0])
+
+    return ids
