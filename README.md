@@ -3,7 +3,7 @@ Convert spellscript to use registry macros (see official wiki https://www.azerot
 
 This tool find the first SpellScript by searching for `public SpellScriptLoader` in a file and converts it. Use `--skip` to start at a specific line
 
-Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may remove variables; some manual work is required, but is a good first pass
+Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may remove variables; some manual work is required, but it is a good first pass
 
 ## Features
 
