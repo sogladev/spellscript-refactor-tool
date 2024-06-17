@@ -13,6 +13,7 @@ Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may 
 - [x] add `bool Validate...` if it does not exist already
 - [x] read/write to file
 - [x] create skeleton update statement `spell_script_names` to `script_name.sql` if type is `_aura`
+- [x] fill in spell_ids skeleton update with spell_ids from table `acore_world` `spell_script_names`
 - [x] `--skip` to specify line number to search for SpellScript
 - [x] `--debug` to write debug info to a `refactor.log` file
 - [ ] magic numbers to Enum
