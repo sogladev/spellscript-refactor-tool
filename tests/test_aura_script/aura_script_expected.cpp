@@ -27,4 +27,5 @@ class spell_yogg_saron_malady_of_the_mind_aura : public AuraScript
     }
 };
 
+void AddSC_
     RegisterSpellScript(spell_yogg_saron_malady_of_the_mind_aura);

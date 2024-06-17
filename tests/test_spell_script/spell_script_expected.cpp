@@ -33,4 +33,5 @@ class spell_yogg_saron_titanic_storm : public SpellScript
     }
 };
 
+void AddSC_
     RegisterSpellScript(spell_yogg_saron_titanic_storm);

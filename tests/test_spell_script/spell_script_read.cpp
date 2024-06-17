@@ -44,4 +44,5 @@ public:
     }
 };
 
+void AddSC_
     new spell_yogg_saron_titanic_storm();

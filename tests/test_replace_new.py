@@ -15,8 +15,8 @@ def test_remove_aura_spell_suffix(spell_script, spell_script_without_suffix):
     assert remove_aura_spell_suffix(spell_script) == spell_script_without_suffix
 
 def test_replace_new_with_RegisterSpellScript_aura_of_despair():
-    lines_input    = ['    new spell_aura_of_despair();']
-    lines_expected = ['    RegisterSpellScript(spell_aura_of_despair);']
+    lines_input    = ['void AddSC_', '    new spell_aura_of_despair();']
+    lines_expected = ['void AddSC_', '    RegisterSpellScript(spell_aura_of_despair);']
     lines = replace_new_with_RegisterSpellScript(lines_input, 'spell_aura_of_despair', ScriptType.AURA)
     assert len(lines) == len(lines_expected)
-    assert lines[0] == lines_expected[0]
+    assert lines[1] == lines_expected[1]

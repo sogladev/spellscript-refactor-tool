@@ -106,10 +106,13 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 return start+start_index, i+start_index
 
 def find_spell_to_validate(line) -> Union[str, None]:
+    if 'GetSpellInfo()->Effects[effect->GetEffIndex()].TriggerSpell' in line:
+        return None
     if '->CastCustomSpell(' in line:
         logger.debug(f"{line=}")
         try:
-            spell = line.split('->CastCustomSpell(')[1].split(',')[0]
+            spell = line.split('->CastCustomSpell(')[1]
+            spell = re.findall('(SPELL_[A-Z_]{,}|[0-9]{4,})', spell)[0]
             logger.debug(f"{spell=}")
             spell = spell.strip()
             logger.debug(f"strip needed? {spell=}")
@@ -123,6 +126,8 @@ def find_spell_to_validate(line) -> Union[str, None]:
         try:
             spell = line.split('->CastSpell(')[1].split(',')[1]
             logger.debug(f"{spell=}")
+            if len(list(re.findall('(SPELL_[A-Z_]{,}|[0-9]{4,})', spell))) == 0:
+                return None
             spell = spell.strip()
             logger.debug(f"strip needed? {spell=}")
             spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
@@ -332,8 +337,11 @@ def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     logger.debug(f"{script_type=}")
     logger.debug(f"{script_name_search=}")
     logger.debug(f"{lines}")
+    foundVoidSc = False
     for i, line in enumerate(lines):
-        if script_name_search in line:
+        if line.startswith("void AddSC_"):
+            foundVoidSc = True
+        if foundVoidSc and script_name_search in line:
             logger.debug(f"{script_name_search=}")
             logger.debug(f"{script_name=}")
             new_line = format_RegisterSpellScript(script_name, script_type)
