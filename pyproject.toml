@@ -7,7 +7,8 @@ name = "acore_spellscript_refactor"
 readme = "README.md"
 description = "tool that finds the first SpellScript by searching for public SpellScriptLoader in a file and converts it to use registry macros"
 version = "1.2.0"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
+dependencies = ['mysql-connector-python >= 8.0.0']
 
 [project.urls]
 "Homepage" = "https://github.com/sogladev/spellscript-refactor-tool"

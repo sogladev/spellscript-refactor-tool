@@ -4,6 +4,7 @@ from typing import Union
 
 from .util.colors import Color, color
 from .util.logger import logger
+from .util.db import generate_sql_update_script_name
 
 class ScriptType(Enum):
     AURA = 1
@@ -342,6 +343,7 @@ def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
             return lines
     logger.error("No register name found")
 
+
 def format_first_block_in_file(path_in, path_out, skip=0) -> None:
     logger.info(f"{path_in=}")
     logger.info(f"{path_out=}")
@@ -364,7 +366,7 @@ def format_first_block_in_file(path_in, path_out, skip=0) -> None:
     if script_type == ScriptType.AURA:
         logger.info(color('Written query to script_name.sql', Color.GREEN))
         with open('script_name.sql', 'a') as file:
-            sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`=XXXXX;\n""".format(script_name)
+            sql_update_script_name = generate_sql_update_script_name(script_name)
             logger.debug(f"{sql_update_script_name=}")
             file.write(sql_update_script_name)
 
