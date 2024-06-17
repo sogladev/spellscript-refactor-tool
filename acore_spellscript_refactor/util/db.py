@@ -1,4 +1,6 @@
 # connect with database
+import re
+
 import mysql.connector
 
 from .colors import Color, color
@@ -18,6 +20,7 @@ def format_spell_ids(spell_ids):
     return spell_ids_format
 
 def generate_sql_update_script_name(script_name: str) -> str:
+    script_name = re.sub('_aura$', '', script_name)
     try:
         spell_ids = db_lookup_ids(script_name)
     except mysql.connector.Error as error:
