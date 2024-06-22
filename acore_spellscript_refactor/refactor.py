@@ -344,18 +344,17 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
     with open(path_out, 'w') as file:
         file.write('\n'.join(lines))
 
-    if script_type == ScriptType.AURA:
-        if original_script_name == script_name:
-            logger.info(color(f"Skipped query for aura {original_script_name=}", Color.YELLOW))
-        else:
-            with open(sql_path, 'a') as file:
-                sql_update_script_name = generate_sql_update_script_name(original_script_name, script_name)
-                if sql_update_script_name == '':
-                    logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
-                else:
-                    logger.debug(f"{sql_update_script_name=}")
-                    file.write(sql_update_script_name)
-                    logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+    if script_type != ScriptType.AURA or original_script_name == script_name:
+        logger.info(color(f"Skipped query for {original_script_name=}", Color.YELLOW))
+    elif script_type == ScriptType.AURA:
+        with open(sql_path, 'a') as file:
+            sql_update_script_name = generate_sql_update_script_name(original_script_name, script_name)
+            if sql_update_script_name == '':
+                logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
+            else:
+                logger.debug(f"{sql_update_script_name=}")
+                file.write(sql_update_script_name)
+                logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
 
     if create_commit:
         from os import system
