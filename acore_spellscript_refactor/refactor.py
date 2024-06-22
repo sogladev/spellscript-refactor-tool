@@ -107,49 +107,17 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 logger.debug(f"{absolute_start=},{absolute_end=}")
                 return start+start_index, i+start_index
 
-def find_spell_to_validate(line) -> Union[str, None]:
-    if 'GetSpellInfo()->Effects[effect->GetEffIndex()].TriggerSpell' in line:
-        return None
-    if '->CastCustomSpell(' in line:
+def find_spells_to_validate(line) -> list[str]:
+    if any(m in line for m in ['->CastCustomSpell(', '->CastSpell(', '->ApplySpellImmune']):
         logger.debug(f"{line=}")
-        try:
-            spell = line.split('->CastCustomSpell(')[1]
-            spell = re.findall('(SPELL_[A-Z_]{,}|[0-9]{4,})', spell)[0]
+        spells = []
+        spells_found = re.findall('(SPELL_[A-Z_0-9]{,}|[0-9]{4,})', line)
+        for spell in spells_found:
             logger.debug(f"{spell=}")
-            spell = spell.strip()
-            logger.debug(f"strip needed? {spell=}")
-            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
-            logger.debug(f"{spell=}")
-            return spell
-        except IndexError:
-            return
-    if '->CastSpell(' in line:
-        logger.debug(f"{line=}")
-        try:
-            spell = line.split('->CastSpell(')[1].split(',')[1]
-            logger.debug(f"{spell=}")
-            if len(list(re.findall('(SPELL_[A-Z_]{,}|[0-9]{4,})', spell))) == 0:
-                return None
-            spell = spell.strip()
-            logger.debug(f"strip needed? {spell=}")
-            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
-            logger.debug(f"{spell=}")
-            return spell
-        except IndexError:
-            return
-    if '->ApplySpellImmune' in line:
-        logger.debug(f"{line=}")
-        try:
-            spell = line.split('->ApplySpellImmune')[1].split(',')[0]
-            logger.debug(f"{spell=}")
-            spell = spell.strip()
-            logger.debug(f"strip needed? {spell=}")
-            spell = re.sub(r'[^a-zA-Z0-9_]', '', spell) # only keep these characters, remove $(;) etc
-            logger.debug(f"{spell=}")
-            return spell
-        except IndexError:
-            return
-    return None
+            if spell not in spells:
+                spells.append(spell)
+        return spells
+    return []
 
 def format_spells(spells):
     return ', '.join(spells)
@@ -168,9 +136,10 @@ def create_validate_lines(lines_to_search, start_index=0) -> str:
     spells = []
     for i, line in enumerate(lines_to_search[start_index:]):
         logger.debug(f"{i:03};{line}")
-        spell = find_spell_to_validate(line)
-        if spell is not None and spell not in spells:
-            spells.append(spell)
+        spells_found = find_spells_to_validate(line)
+        for spell in spells_found:
+            if spell not in spells:
+                spells.append(spell)
         if 'void Register' in line:
             break
     if len(spells) == 0:
