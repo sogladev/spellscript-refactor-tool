@@ -78,7 +78,7 @@ def find_register_statements(lines, start_index):
         logger.debug(f"{i:03}:{dbg_out}")
     return register_statements
 
-def format_register_statements(register_statements):
+def format_register_statements(register_statements, original=None, new=None):
     register_statements_format = []
     for c in register_statements:
         if c.strip() == '':
@@ -87,12 +87,13 @@ def format_register_statements(register_statements):
             c = 8*' ' + c.lstrip()
             c = c.replace('_AuraScript','_aura').replace('_aura_aura','_aura')
             c = c.replace('_SpellScript','')
+            if original is not None and new is not None:
+                c = c.replace(original+'Script',new)
         register_statements_format.append(c)
     for i, dbg_out in enumerate(register_statements):
         logger.debug(f"before:{i:03}:{dbg_out}")
     for i, dbg_out in enumerate(register_statements_format):
         logger.debug(f"after :{i:03}:{dbg_out}")
-
     return register_statements_format
 
 def find_content_start_end_index(lines_to_search, start_index=0):
@@ -177,7 +178,7 @@ def find_content_statements(lines, start_index):
     content_statements = lines[content_index_start+1:content_index_end]
     return content_statements
 
-def format_content_statements(content_statements):
+def format_content_statements(content_statements, original=None, new=None):
     content_statements_format = []
     for c in content_statements:
         if c.strip() == '':
@@ -186,6 +187,8 @@ def format_content_statements(content_statements):
             c = (4*' ').join(c.split(4*' ')[1:])
         c = c.replace('_AuraScript','_aura').replace('_aura_aura','_aura')
         c = c.replace('_SpellScript','')
+        if original is not None and new is not None:
+            c = c.replace(original+'Script',new)
         content_statements_format.append(c)
     for i, dbg_out in enumerate(content_statements):
         logger.debug(f"before:{i:03}:{dbg_out}")
@@ -210,10 +213,10 @@ def convert_aura_or_spell_script(lines, start_index, last_index, script_type, sc
     type = 'SpellScript' if script_type == ScriptType.SPELL else 'AuraScript'
     prepare = 'Spell' if script_type == ScriptType.SPELL else 'Aura'
     register_statements = find_register_statements(lines, start_index)
-    register_statements = format_register_statements(register_statements)
+    register_statements = format_register_statements(register_statements, original=original_script_name, new=script_name)
     content_statements = find_content_statements(lines, start_index)
     validate = create_validate_lines(lines, start_index) if not is_validate_in_content(content_statements) else ''
-    content_statements = format_content_statements(content_statements)
+    content_statements = format_content_statements(content_statements, original=original_script_name, new=script_name)
 
     content: str = '\n'.join(content_statements)
     register_formatted: str = '\n'.join(register_statements)
