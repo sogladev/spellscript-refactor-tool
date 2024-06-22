@@ -18,6 +18,7 @@ def test_always_passes():
     ('target->CastCustomSpell(dmgInfo.G7etAttacker(), 717878, &2bp, nullptr, nullptr, true, nullptr, aurEff);', '717878'),
     ('GetUnitOwner()->CastSpell(target, GetSpellInfo()->Effects[effect->GetEffIndex()].TriggerSpell, true);', None),
     ('GetCaster()->CastSpell(GetHitUnit(), (*i)->GetAmount(), true);', None),
+    ('GetCaster()->CastSpell(target, GetEffectValue(), true);', None),
 ])
 
 def test_find_spell_to_validate(line, spell):
