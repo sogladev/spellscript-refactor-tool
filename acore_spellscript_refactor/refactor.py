@@ -21,6 +21,7 @@ def find_start_last_index(lines_to_search):
             if line.rstrip() == '};':
                 return start_index, i
     logger.error(color(f"No spells scripts found", Color.RED))
+    exit(1)
 
 def find_name_of_script(lines_to_search, start_index=0):
     for line in lines_to_search[start_index:]:
