@@ -9,12 +9,13 @@ def main():
     parser.add_argument('dest_file', nargs='?', type=str, default=None)
     parser.add_argument('--skip', type=int, default=0, help="amount of lines to skip")
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--sql_file', nargs='?', type=str, default=None)
     args = parser.parse_args()
     if args.debug:
         enable_file_log()
     if not args.dest_file:
         args.dest_file = args.source_file
-    format_first_block_in_file(args.source_file, args.dest_file, skip=args.skip)
+    format_first_block_in_file(args.source_file, args.dest_file, skip=args.skip, sql_path=args.sql_file)
 
 if __name__ == '__main__':
     main()

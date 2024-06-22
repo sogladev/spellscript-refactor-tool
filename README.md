@@ -16,6 +16,7 @@ Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may 
 - [x] fill in spell_ids skeleton update with spell_ids from table `acore_world` `spell_script_names`
 - [x] `--skip` to specify line number to search for SpellScript
 - [x] `--debug` to write debug info to a `refactor.log` file
+- [x] `--sql-file` to write script_name updates to specific file
 - [ ] magic numbers to Enum
 
 [See sample log./refactor.log](https://github.com/sogladev/spellscript-refactor-tool/blob/main/refactor.log)
@@ -49,6 +50,7 @@ python3 -m acore_spellscript_refactor.main input_file input_file
 python3 -m acore_spellscript_refactor.main input_file
 skip set amount of lines
 python3 -m acore_spellscript_refactor.main input_file output_file --skip 1200
+python3 -m acore_spellscript_refactor.main input_file output_file --skip 1200 --sql_file ".../azerothcore-wotlk/data/sql/updates/pending_db_world/rev_1719020594949649065.sql"
 ```
 
 ## Development

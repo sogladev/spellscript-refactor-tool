@@ -352,9 +352,10 @@ def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     logger.error("No register name found")
 
 
-def format_first_block_in_file(path_in, path_out, skip=0) -> None:
+def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_updates.sql') -> None:
     logger.info(f"{path_in=}")
     logger.info(f"{path_out=}")
+    logger.info(f"{sql_path=}")
     with open(path_in, 'r') as file:
         lines = file.read();
         lines = lines.split('\n')
@@ -373,7 +374,7 @@ def format_first_block_in_file(path_in, path_out, skip=0) -> None:
 
     if script_type == ScriptType.AURA:
         logger.info(color('Written query to script_name.sql', Color.GREEN))
-        with open('script_name.sql', 'a') as file:
+        with open(sql_path, 'a') as file:
             sql_update_script_name = generate_sql_update_script_name(script_name)
             logger.debug(f"{sql_update_script_name=}")
             file.write(sql_update_script_name)
