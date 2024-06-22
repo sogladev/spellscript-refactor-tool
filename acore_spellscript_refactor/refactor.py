@@ -350,9 +350,12 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         else:
             with open(sql_path, 'a') as file:
                 sql_update_script_name = generate_sql_update_script_name(original_script_name, script_name)
-                logger.debug(f"{sql_update_script_name=}")
-                file.write(sql_update_script_name)
-                logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+                if sql_update_script_name == '':
+                    logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
+                else:
+                    logger.debug(f"{sql_update_script_name=}")
+                    file.write(sql_update_script_name)
+                    logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
 
     if create_commit:
         from os import system
