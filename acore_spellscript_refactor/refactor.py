@@ -98,7 +98,7 @@ def format_register_statements(register_statements):
 def find_content_start_end_index(lines_to_search, start_index=0):
     start = None
     for i, line in enumerate(lines_to_search[start_index:]):
-        if "Prepare" in line:
+        if any(p in line for p in ['PrepareAuraScript', 'PrepareSpellScript']):
             start = i
         if start:
             if 'void Register' in line:
