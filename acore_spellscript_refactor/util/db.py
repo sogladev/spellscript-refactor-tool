@@ -19,10 +19,9 @@ def format_spell_ids(spell_ids):
     logger.debug(f'{spell_ids_format=}')
     return spell_ids_format
 
-def generate_sql_update_script_name(script_name: str) -> str:
-    script_name_lookup = re.sub('_aura$', '', script_name)
+def generate_sql_update_script_name(script_name_original: str, script_name: str) -> str:
     try:
-        spell_ids = db_lookup_ids(script_name_lookup)
+        spell_ids = db_lookup_ids(script_name_original)
     except mysql.connector.Error as error:
         logger.error(color(f"{error=}", Color.RED))
         logger.error(color(f"failed for {script_name=}. Incorrect database credentials", Color.RED))

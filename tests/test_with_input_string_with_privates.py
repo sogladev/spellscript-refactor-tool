@@ -142,7 +142,7 @@ def test_format_content_start_end_index(lines):
     assert all(f.strip() != '' or (f.strip() == '' and f == '') for f in formatted_content_statements)
 
 def test_convert_function_block(lines, expect, expect_spell_string):
-    out, spell_type, start_index, last_index, _ = convert_function_block(lines)
+    out, spell_type, start_index, last_index, _, _ = convert_function_block(lines)
     assert spell_type == ScriptType.AURA
     assert expect == out
     out = out.split('\n')

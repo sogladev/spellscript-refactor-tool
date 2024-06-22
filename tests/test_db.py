@@ -32,7 +32,7 @@ def test_db_write_sql():
     script_name = 'spell_gen_proc_not_self'
     result = db_lookup_ids(script_name)
     assert result[0] == 70803
-    sql = generate_sql_update_script_name(script_name)
+    sql = generate_sql_update_script_name(script_name, script_name)
     sql_expected ="""UPDATE `spell_script_names` SET `ScriptName`='spell_gen_proc_not_self' WHERE `spell_id`=70803;\n"""
     assert sql == sql_expected
 
@@ -41,7 +41,7 @@ def test_db_write_sql_fail():
     script_name = 'doesnotexist123823'
     result = db_lookup_ids(script_name)
     assert len(result) == 0
-    sql = generate_sql_update_script_name(script_name)
+    sql = generate_sql_update_script_name(script_name, script_name)
     sql_expected = ''
     assert sql == sql_expected
 

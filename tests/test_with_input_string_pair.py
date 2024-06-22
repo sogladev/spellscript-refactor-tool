@@ -240,7 +240,7 @@ def test_find_spell_block_in_pair(lines, expect_spell):
     assert len(expect_spell) == len(spell_script_lines)
 
 def test_convert_function_block(lines, expect, expect_spell, expect_aura):
-    converted_pair, spell_type, start_index, last_index, _ = convert_function_block(lines)
+    converted_pair, spell_type, start_index, last_index, _, _ = convert_function_block(lines)
     assert spell_type == ScriptType.PAIR
 
     spell, aura = converted_pair
