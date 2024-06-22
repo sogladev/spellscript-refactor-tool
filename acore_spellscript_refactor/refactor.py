@@ -1,6 +1,7 @@
 import re
 from enum import Enum
 from typing import Union
+from pathlib import Path
 
 from .util.colors import Color, color
 from .util.logger import logger
@@ -21,7 +22,7 @@ def find_start_last_index(lines_to_search):
             if line.rstrip() == '};':
                 return start_index, i
     logger.error(color(f"No spells scripts found", Color.RED))
-    exit(1)
+    raise ValueError
 
 def find_name_of_script(lines_to_search, start_index=0):
     for line in lines_to_search[start_index:]:
@@ -236,7 +237,7 @@ def format_variables(variables):
 def is_validate_in_content(content_statements):
     return any('bool Validate(' in c for c in content_statements)
 
-def convert_aura_or_spell_script(lines, start_index, last_index, script_type, script_name) -> tuple[list[str], ScriptType, int, int, str]:
+def convert_aura_or_spell_script(lines, start_index, last_index, script_type, script_name, original_script_name) -> tuple[list[str], ScriptType, int, int, str, str]:
     type = 'SpellScript' if script_type == ScriptType.SPELL else 'AuraScript'
     prepare = 'Spell' if script_type == ScriptType.SPELL else 'Aura'
     register_statements = find_register_statements(lines, start_index)
@@ -268,7 +269,7 @@ register_formatted+\
     for i, dbg_out in enumerate(out_formatted.split('\n')):
         logger.debug(f"after :{i:03}:{dbg_out}")
 
-    return out_formatted, script_type, start_index, last_index, script_name
+    return out_formatted, script_type, start_index, last_index, script_name, original_script_name
 
 def find_spell_block_in_pair(lines, script_type):
     reg = None
@@ -299,25 +300,26 @@ def format_script_name(script_name, script_type):
     elif script_type == ScriptType.PAIR:
         return script_name
 
-def convert_function_block(lines: list[str]) -> tuple[str, ScriptType, int, int, str]:
+def convert_function_block(lines: list[str]) -> tuple[str, ScriptType, int, int, str, str]:
     start_index, last_index = find_start_last_index(lines)
     logger.debug(f"{start_index=}{last_index=}")
     script_type = get_script_type(lines, start_index)
     logger.debug(f"{script_type=}")
     script_name = find_name_of_script(lines, start_index)
+    original_script_name = script_name
     formatted_script_name = format_script_name(script_name, script_type)
     logger.debug(f"{script_name=}")
     if script_type != ScriptType.PAIR:
-        return convert_aura_or_spell_script(lines, start_index, last_index, script_type, formatted_script_name)
+        return convert_aura_or_spell_script(lines, start_index, last_index, script_type, formatted_script_name, original_script_name)
     spell_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.SPELL)
     formatted_script_name = format_script_name(script_name, ScriptType.SPELL)
-    converted_spell, _, _, _, _ = convert_aura_or_spell_script(spell_script_lines, 0, len(spell_script_lines), ScriptType.SPELL, formatted_script_name)
+    converted_spell, _, _, _, _, _ = convert_aura_or_spell_script(spell_script_lines, 0, len(spell_script_lines), ScriptType.SPELL, formatted_script_name, original_script_name)
 
     aura_script_lines = find_spell_block_in_pair(lines[start_index:last_index], ScriptType.AURA)
     formatted_script_name = format_script_name(script_name, ScriptType.AURA)
-    converted_aura, _, _, _, _ = convert_aura_or_spell_script(aura_script_lines, 0, len(aura_script_lines), ScriptType.AURA, formatted_script_name)
+    converted_aura, _, _, _, _, _ = convert_aura_or_spell_script(aura_script_lines, 0, len(aura_script_lines), ScriptType.AURA, formatted_script_name, original_script_name)
 
-    return (converted_spell, converted_aura), script_type, start_index, last_index, script_name
+    return (converted_spell, converted_aura), script_type, start_index, last_index, script_name, original_script_name
 
 def format_RegisterSpellScript(script_name, script_type: ScriptType) -> str:
     if script_type == ScriptType.PAIR:
@@ -353,7 +355,7 @@ def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     logger.error("No register name found")
 
 
-def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_updates.sql') -> None:
+def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_updates.sql', create_commit=False):
     logger.info(f"{path_in=}")
     logger.info(f"{path_out=}")
     logger.info(f"{sql_path=}")
@@ -361,7 +363,7 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         lines = file.read();
         lines = lines.split('\n')
     logger.debug(f"{len(lines)=} {path_in=}")
-    out, script_type, start_index, last_index, script_name = convert_function_block(lines[skip:])
+    out, script_type, start_index, last_index, script_name, original_script_name = convert_function_block(lines[skip:])
     if type(out) == tuple:
         spell, aura = out
         out = spell + 2*'\n' + aura
@@ -374,9 +376,28 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         file.write('\n'.join(lines))
 
     if script_type == ScriptType.AURA:
-        logger.info(color('Written query to script_name.sql', Color.GREEN))
-        with open(sql_path, 'a') as file:
-            sql_update_script_name = generate_sql_update_script_name(script_name)
-            logger.debug(f"{sql_update_script_name=}")
-            file.write(sql_update_script_name)
+        if original_script_name == script_name:
+            logger.info(color(f"Skipped query for aura {original_script_name=}", Color.YELLOW))
+        else:
+            with open(sql_path, 'a') as file:
+                sql_update_script_name = generate_sql_update_script_name(original_script_name, script_name)
+                logger.debug(f"{sql_update_script_name=}")
+                file.write(sql_update_script_name)
+                logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+
+    if create_commit:
+        from os import system
+        script_type_name = "pair"
+        if script_type == ScriptType.AURA:
+            script_type_name = "aura"
+        elif script_type == ScriptType.SPELL:
+            script_type_name = "spell"
+        system("git reset") # unstage all
+        if sql_path != "script_name_updates.sql":
+            system(f"git add {sql_path}")
+        if path_in == path_out:
+            system(f"git add {path_out}")
+        filename_stem = Path(path_out).stem
+        message = f"\"{filename_stem} {script_type_name}:{script_name}\""
+        system(f"git commit -m {message}")
 

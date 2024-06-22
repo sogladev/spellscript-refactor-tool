@@ -1,12 +1,11 @@
 import argparse
+from pathlib import Path
 
 from .refactor import format_first_block_in_file
 from .util.logger import logger, enable_file_log
 
-def main():
+def discover():
     parser = argparse.ArgumentParser()
-    parser.add_argument('source_file', type=str)
-    parser.add_argument('dest_file', nargs='?', type=str, default=None)
     parser.add_argument('--skip', type=int, default=0, help="amount of lines to skip")
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--commit', action='store_true')
@@ -14,9 +13,16 @@ def main():
     args = parser.parse_args()
     if args.debug:
         enable_file_log()
-    if not args.dest_file:
-        args.dest_file = args.source_file
-    format_first_block_in_file(args.source_file, args.dest_file, skip=args.skip, sql_path=args.sql_file, create_commit=args.commit)
+    cwd = Path(".")
+    cpp_files = cwd.glob("*cpp")
+    for cpp in list(cpp_files):
+        source_file = cpp.absolute()
+        dest_file = source_file
+        for _ in range(100):
+            try:
+                format_first_block_in_file(source_file, dest_file, skip=0, sql_path=args.sql_file, create_commit=args.commit)
+            except ValueError:
+                break
 
 if __name__ == '__main__':
-    main()
+    discover()
