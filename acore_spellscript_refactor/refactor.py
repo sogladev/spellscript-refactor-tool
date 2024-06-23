@@ -87,7 +87,9 @@ def format_register_statements(register_statements, original=None, new=None):
         else:
             c = 8*' ' + c.lstrip()
             c = c.replace('_AuraScript','_aura').replace('_aura_aura','_aura')
+            c = c.replace('AuraScript','_aura').replace('_aura_aura','_aura')
             c = c.replace('_SpellScript','')
+            c = c.replace('SpellScript','')
             if original is not None and new is not None:
                 c = c.replace(original+'Script',new)
         register_statements_format.append(c)
