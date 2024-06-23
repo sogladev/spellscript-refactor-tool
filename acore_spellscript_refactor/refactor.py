@@ -26,8 +26,9 @@ def find_start_last_index(lines_to_search):
 
 def find_name_of_script(lines_to_search, start_index=0):
     for line in lines_to_search[start_index:]:
-        if '"' in line:
-            name = re.findall(r'"(.*?)"', line)[0]
+        logger.debug(f"{line=}")
+        if 'class ' in line and "public SpellScriptLoader" in line:
+            name = re.findall(r'class ([\w_]+)', line)[0]
             logger.debug(f"{name=}")
             return name
 
@@ -96,7 +97,9 @@ def format_register_statements(register_statements, original=None, new=None):
         logger.debug(f"after :{i:03}:{dbg_out}")
     return register_statements_format
 
-def find_content_start_end_index(lines_to_search, start_index=0):
+
+
+def find_content_start_end_index(lines_to_search, start_index=0, script_name=''):
     start = None
     for i, line in enumerate(lines_to_search[start_index:]):
         if any(p in line for p in ['PrepareAuraScript', 'PrepareSpellScript']):
@@ -109,7 +112,15 @@ def find_content_start_end_index(lines_to_search, start_index=0):
                 return start+start_index, i+start_index
 
 def find_spells_to_validate(line) -> list[str]:
-    if any(m in line for m in ['->CastCustomSpell(', '->CastSpell(', '->ApplySpellImmune']):
+    cases_to_validate = [
+        '->CastCustomSpell(',
+        '->CastSpell(',
+        '->ApplySpellImmune',
+        '->HasAura(',
+        '->GetAuraCount(',
+        '->RemoveAurasDueToSpell('
+    ]
+    if any(c in line for c in cases_to_validate ):
         logger.debug(f"{line=}")
         spells = []
         spells_found = re.findall('(SPELL_[A-Z_0-9]{,}|[0-9]{4,})', line)
@@ -156,19 +167,30 @@ def find_variables(lines, start_index=0) -> tuple[bool, int, int]:
     foundEndRegister = False
     foundVariables = False
     for i, line in enumerate(lines[start_index:]):
+        logger.debug(line)
+        if line.rstrip() == '};':
+            start = 0
+            end = i
+            break
         if 'void Register' in line:
+            logger.debug("Found register")
             foundRegister = True
-        if foundRegister and line == 8*" "+"}":
+        if foundRegister and (line == 8*" "+"}" or line == 8*" "+"};"):
             start = i + 1
             foundEndRegister = True
+            logger.debug("Found end register")
             logger.debug(f"{i+start_index} {line}")
         if foundEndRegister and ("protected:" in line or "public:" in line or "private:" in line):
+            logger.debug("Found variable")
             logger.debug(f"{i+start_index}")
             logger.debug(line)
             foundVariables = True
         if foundRegister and (line == '    };' or line == '};'):
             end = i
             break
+    # if start is None or end is None:
+     #    return foundVariables, start_index, start_index
+    # else:
     return foundVariables, start+start_index, end+start_index
 
 def find_content_statements(lines, start_index):
@@ -209,12 +231,34 @@ def format_variables(variables):
 def is_validate_in_content(content_statements):
     return any('bool Validate(' in c for c in content_statements)
 
+def find_constructor_statement(lines_to_search, start_index) -> str:
+    has_public = False
+    for i, line in enumerate(lines_to_search[start_index:]):
+        if any(p in line for p in ['PrepareAuraScript', 'PrepareSpellScript']):
+            return ''
+        if 'public:' in line.lstrip():
+            has_public = True
+        if has_public and ': SpellScriptLoader(name' in line:
+            return line
+    return ''
+
+def format_content_statement(line):
+    # input = 'spell_hadronox_summon_periodic(const char* name, uint32 delay, uint32 spellEntry) : SpellScriptLoader(name), _delay(delay), _spellEntry(spellEntry) { }'
+    # expected = 'spell_hadronox_summon_periodic_aura(uint32 delay, uint32 spellEntry) : _delay(delay), _spellEntry(spellEntry) { }'
+    line = line.replace('const char* name, ','')
+    line = line.replace('SpellScriptLoader(name), ','')
+    return line
+
 def convert_aura_or_spell_script(lines, start_index, last_index, script_type, script_name, original_script_name) -> tuple[list[str], ScriptType, int, int, str, str]:
     type = 'SpellScript' if script_type == ScriptType.SPELL else 'AuraScript'
     prepare = 'Spell' if script_type == ScriptType.SPELL else 'Aura'
     register_statements = find_register_statements(lines, start_index)
     register_statements = format_register_statements(register_statements, original=original_script_name, new=script_name)
     content_statements = find_content_statements(lines, start_index)
+    constructor_statement = find_constructor_statement(lines, start_index)
+    constructor_statement = constructor_statement.replace(original_script_name, script_name)
+    constructor_statement_formatted = format_content_statement(constructor_statement)
+    constructor = f"\npublic:\n{constructor_statement_formatted}\n" if constructor_statement else ''
     validate = create_validate_lines(lines, start_index) if not is_validate_in_content(content_statements) else ''
     content_statements = format_content_statements(content_statements, original=original_script_name, new=script_name)
 
@@ -227,7 +271,7 @@ def convert_aura_or_spell_script(lines, start_index, last_index, script_type, sc
         variables = 2*'\n'+'\n'.join(format_variables(lines[start:end]))
     out_formatted = \
 """class """+script_name+""" : public """+type+"""\n{
-    Prepare"""+prepare+"""Script("""+script_name+");\n"+validate\
+    Prepare"""+prepare+"""Script("""+script_name+");\n"+constructor+validate\
 +content+\
 """
     void Register() override
@@ -293,9 +337,11 @@ def convert_function_block(lines: list[str]) -> tuple[str, ScriptType, int, int,
 
     return (converted_spell, converted_aura), script_type, start_index, last_index, script_name, original_script_name
 
-def format_RegisterSpellScript(script_name, script_type: ScriptType) -> str:
+def format_RegisterSpellScript(script_name, script_type: ScriptType, args=None) -> str:
     if script_type == ScriptType.PAIR:
         register_statement = f"    RegisterSpellAndAuraScriptPair({script_name}, {script_name}_aura);"
+    elif args is not None:
+        register_statement = f"    RegisterSpellScriptWithArgs({script_name}, {', '.join(args)});"
     else:
         register_statement = f"    RegisterSpellScript({script_name});"
     logger.debug(f"{register_statement=}")
@@ -313,17 +359,28 @@ def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     logger.debug(f"{script_name_search=}")
     logger.debug(f"{lines}")
     foundVoidSc = False
+    hasArguments = False
     for i, line in enumerate(lines):
         if line.startswith("void AddSC_"):
             foundVoidSc = True
         if foundVoidSc and script_name_search in line:
             logger.debug(f"{script_name_search=}")
             logger.debug(f"{script_name=}")
-            new_line = format_RegisterSpellScript(script_name, script_type)
-            logger.debug(f"before:{lines[i]}")
-            lines[i] = new_line
-            logger.debug(f"after :{new_line}")
-            return lines
+            if line.endswith("();"):
+                new_line = format_RegisterSpellScript(script_name, script_type)
+                logger.debug(f"before:{lines[i]}")
+                lines[i] = new_line
+                logger.debug(f"after :{new_line}")
+                return lines, None
+            else:
+                args_found = re.findall('new \w+\((.+)\);', line)
+                args = [s.strip() for s in args_found[0].split(',')]
+                new_line = format_RegisterSpellScript(script_name, script_type, args=args)
+                lines[i] = new_line
+                logger.debug(f"after :{new_line}")
+                hasArguments = True
+    if hasArguments:
+        return lines, args[0] # return name
     logger.error("No register name found")
 
 
@@ -340,13 +397,15 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         spell, aura = out
         out = spell + 2*'\n' + aura
     lines = lines[:start_index+skip] + out.split('\n') + lines[last_index+skip+1:]
-    lines: list[str] = replace_new_with_RegisterSpellScript(lines, script_name, script_type)
+    lines, arg_name = replace_new_with_RegisterSpellScript(lines, script_name, script_type)
 
     for i, dbg_out in enumerate(lines):
         logger.debug(f"{i:03}:{dbg_out}")
     with open(path_out, 'w') as file:
         file.write('\n'.join(lines))
+        logger.info(color(f"{script_name=}", Color.GREEN))
 
+    hasUpdateQuery = False
     if script_type != ScriptType.AURA or original_script_name == script_name:
         logger.info(color(f"Skipped query for {original_script_name=}", Color.YELLOW))
     elif script_type == ScriptType.AURA:
@@ -357,7 +416,21 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
             else:
                 logger.debug(f"{sql_update_script_name=}")
                 file.write(sql_update_script_name)
+                hasUpdateQuery = True
                 logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+        if arg_name is not None:
+            with open(sql_path, 'a') as file:
+                arg_name = arg_name.strip('"')
+                arg_name_new = arg_name+'_aura' if not arg_name.endswith('_aura') else arg_name
+                if arg_name != arg_name_new:
+                    sql_update_script_name = generate_sql_update_script_name(arg_name, arg_name_new )
+                    if sql_update_script_name == '':
+                        logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
+                    else:
+                        logger.debug(f"{sql_update_script_name=}")
+                        file.write(sql_update_script_name)
+                        hasUpdateQuery = True
+                        logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
 
     if create_commit:
         from os import system
@@ -367,7 +440,7 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         elif script_type == ScriptType.SPELL:
             script_type_name = "spell"
         system("git reset") # unstage all
-        if sql_path != "script_name_updates.sql":
+        if sql_path != "script_name_updates.sql" and hasUpdateQuery:
             system(f"git add {sql_path}")
         if path_in == path_out:
             system(f"git add {path_out}")

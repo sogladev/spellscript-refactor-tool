@@ -18,6 +18,7 @@ Disclaimer: this tool is dumb. It does not add enums for magic numbers, and may 
 - [x] `--debug` to write debug info to a `refactor.log` file
 - [x] `--sql-file` to write script_name updates to specific file
 - [x] `discover` runs repeatedly on all `*cpp` in directory
+- [x] spell scripts with args
 - [ ] magic numbers to Enum
 
 [See sample log./refactor.log](https://github.com/sogladev/spellscript-refactor-tool/blob/main/refactor.log)
