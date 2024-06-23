@@ -4,6 +4,11 @@ class spell_yogg_saron_titanic_storm : public SpellScript
 {
     PrepareSpellScript(spell_yogg_saron_titanic_storm);
 
+    bool Validate(SpellInfo const* /*spellInfo*/) override
+    {
+        return ValidateSpellInfo({ SPELL_WEAKENED });
+    }
+
     void HandleDummyEffect(SpellEffIndex effIndex)
     {
         PreventHitDefaultEffect(effIndex);

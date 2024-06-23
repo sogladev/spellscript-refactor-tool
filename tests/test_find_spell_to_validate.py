@@ -22,6 +22,7 @@ def test_always_passes():
     ('GetCaster()->CastSpell(target, GetEffectValue(), true);', []),
     ('GetCaster()->CastSpell(target, GetEffectValue(), true);', []),
     ('GetUnitOwner()->CastSpell(GetUnitOwner(), RAND(SPELL_SINFUL_PERIODIC, SPELL_SINISTER_PERIODIC, SPELL_VILE_PERIODIC, SPELL_WICKED_PERIODIC), true);', ['SPELL_SINFUL_PERIODIC', 'SPELL_SINISTER_PERIODIC', 'SPELL_VILE_PERIODIC', 'SPELL_WICKED_PERIODIC']),
+    ('(player->GetAuraCount(SPELL_OSCILLATION_FIELD) == 5 && player->GetQuestStatus(QUEST_GAUGING_THE_RESONANT_FREQUENCY) == QUEST_STATUS_INCOMPLETE)', ['SPELL_OSCILLATION_FIELD']),
 ])
 
 def test_find_spell_to_validate(line, spells):
