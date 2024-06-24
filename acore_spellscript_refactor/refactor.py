@@ -101,8 +101,6 @@ def format_register_statements(register_statements, original=None, new=None):
         logger.debug(f"after :{i:03}:{dbg_out}")
     return register_statements_format
 
-
-
 def find_content_start_end_index(lines_to_search, start_index=0, script_name=''):
     start = None
     for i, line in enumerate(lines_to_search[start_index:]):
@@ -341,10 +339,15 @@ def convert_function_block(lines: list[str]) -> tuple[str, ScriptType, int, int,
 
     return (converted_spell, converted_aura), script_type, start_index, last_index, script_name, original_script_name
 
+ARGS_REGISTER_LINES = []
+
 def format_RegisterSpellScript(script_name, script_type: ScriptType, args=None) -> str:
     if script_type == ScriptType.PAIR:
         register_statement = f"    RegisterSpellAndAuraScriptPair({script_name}, {script_name}_aura);"
     elif args is not None:
+        if script_type == ScriptType.AURA:
+            ARGS_REGISTER_LINES.append(args[0].replace('"',''))
+            args[0] = args[0][:-1]+'_aura"'
         register_statement = f"    RegisterSpellScriptWithArgs({script_name}, {', '.join(args)});"
     else:
         register_statement = f"    RegisterSpellScript({script_name});"
@@ -355,6 +358,7 @@ def remove_aura_spell_suffix(script_name):
     script_name_without_aura_suffix = re.sub('_aura$', '', script_name)
     script_name_without_aura_spell_suffix = re.sub('_spell$', '', script_name_without_aura_suffix)
     return script_name_without_aura_spell_suffix
+
 
 def replace_new_with_RegisterSpellScript(lines, script_name, script_type):
     script_name_search = "new "+ remove_aura_spell_suffix(script_name)
@@ -416,25 +420,25 @@ def format_first_block_in_file(path_in, path_out, skip=0, sql_path='script_name_
         with open(sql_path, 'a') as file:
             sql_update_script_name = generate_sql_update_script_name(original_script_name, script_name)
             if sql_update_script_name == '':
-                logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
+                logger.error(color(f"Update is empty for {original_script_name=}:{script_name=}", Color.RED))
             else:
                 logger.debug(f"{sql_update_script_name=}")
                 file.write(sql_update_script_name)
                 hasUpdateQuery = True
-                logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+                logger.info(color(f"Appended {script_name} to {Path(sql_path).name}", Color.GREEN))
         if arg_name is not None:
             with open(sql_path, 'a') as file:
-                arg_name = arg_name.strip('"')
-                arg_name_new = arg_name+'_aura' if not arg_name.endswith('_aura') else arg_name
-                if arg_name != arg_name_new:
-                    sql_update_script_name = generate_sql_update_script_name(arg_name, arg_name_new )
-                    if sql_update_script_name == '':
-                        logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
-                    else:
-                        logger.debug(f"{sql_update_script_name=}")
-                        file.write(sql_update_script_name)
-                        hasUpdateQuery = True
-                        logger.info(color(f"Appended query to {Path(sql_path).name}", Color.GREEN))
+                for arg_name in ARGS_REGISTER_LINES:
+                    arg_name_new = arg_name+'_aura' if not arg_name.endswith('_aura') else arg_name
+                    if arg_name != arg_name_new:
+                        sql_update_script_name = generate_sql_update_script_name(arg_name, arg_name_new)
+                        if sql_update_script_name == '':
+                            logger.error(color(f"Update query is empty for {original_script_name=}:{script_name=}", Color.RED))
+                        else:
+                            logger.debug(f"{sql_update_script_name=}")
+                            file.write(sql_update_script_name)
+                            hasUpdateQuery = True
+                            logger.info(color(f"Appended {arg_name_new} to {Path(sql_path).name}", Color.GREEN))
 
     if create_commit:
         from os import system
