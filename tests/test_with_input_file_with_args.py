@@ -18,7 +18,6 @@ def expect():
 def test_always_passes():
     assert True
 
-@pytest.mark.skipif(os.getenv(ENV_GITHUB_CI) is not None, reason="TODO")
 def test_format_first_block_in_file(expect):
     format_first_block_in_file(FILENAME_READ, FILENAME_WRITE)
 
