@@ -17,6 +17,8 @@ def find_start_last_index(lines_to_search):
     for i, line in enumerate(lines_to_search):
         if (start_index is None and re.match("class .* : public SpellScriptLoader", line)):
             start_index = i
+        if (start_index is None and re.match("class .* : SpellScriptLoader", line)):
+            start_index = i
         if start_index:
             logger.debug(f"{i:,=} {line=}")
             if line.rstrip() == '};':
@@ -27,7 +29,7 @@ def find_start_last_index(lines_to_search):
 def find_name_of_script(lines_to_search, start_index=0):
     for line in lines_to_search[start_index:]:
         logger.debug(f"{line=}")
-        if 'class ' in line and "public SpellScriptLoader" in line:
+        if 'class ' in line and ("public SpellScriptLoader" in line or ": SpellScriptLoader" in line):
             name = re.findall(r'class ([\w_]+)', line)[0]
             logger.debug(f"{name=}")
             return name
