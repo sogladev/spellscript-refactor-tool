@@ -25,7 +25,7 @@ def generate_sql_update_script_name(script_name_original: str, script_name: str)
     except mysql.connector.Error as error:
         logger.error(color(f"{error=}", Color.RED))
         logger.error(color(f"failed for {script_name=}. Incorrect database credentials", Color.RED))
-        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`=XXXXX AND `ScriptName` = '{}';\n""".format(script_name, script_name_original)
+        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`=XXXXX AND `ScriptName`='{}';\n""".format(script_name, script_name_original)
         return sql_update_script_name
 
     if len(spell_ids) == 0:
@@ -33,11 +33,11 @@ def generate_sql_update_script_name(script_name_original: str, script_name: str)
         return ''
     elif len(spell_ids) == 1:
         spell_id = spell_ids[0]
-        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`={} AND `ScriptName` = '{}';\n""".format(script_name, spell_id, script_name_original)
+        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id`={} AND `ScriptName`='{}';\n""".format(script_name, spell_id, script_name_original)
         return sql_update_script_name
     else:
         spell_ids_format = format_spell_ids(spell_ids)
-        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id` IN {} AND `ScriptName` = '{}';\n""".format(script_name, spell_ids_format, script_name_original)
+        sql_update_script_name = """UPDATE `spell_script_names` SET `ScriptName`='{}' WHERE `spell_id` IN {} AND `ScriptName`='{}';\n""".format(script_name, spell_ids_format, script_name_original)
         return sql_update_script_name
 
 def db_lookup_ids(script_name: str) -> list[int] :

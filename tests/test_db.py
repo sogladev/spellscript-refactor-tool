@@ -33,7 +33,7 @@ def test_db_write_sql():
     result = db_lookup_ids(script_name)
     assert result[0] == 70803
     sql = generate_sql_update_script_name(script_name, script_name)
-    sql_expected ="""UPDATE `spell_script_names` SET `ScriptName`='spell_gen_proc_not_self' WHERE `spell_id`=70803 AND `ScriptName` = 'spell_gen_proc_not_self';\n"""
+    sql_expected ="""UPDATE `spell_script_names` SET `ScriptName`='spell_gen_proc_not_self' WHERE `spell_id`=70803 AND `ScriptName`='spell_gen_proc_not_self';\n"""
     assert sql == sql_expected
 
 @pytest.mark.skipif(os.getenv(ENV_GITHUB_CI) is not None, reason="skip this test in CI")
@@ -43,7 +43,7 @@ def test_db_write_sql_with_original():
     result = db_lookup_ids(script_name_original)
     assert result[0] == 70803
     sql = generate_sql_update_script_name(script_name_original, script_name)
-    sql_expected ="""UPDATE `spell_script_names` SET `ScriptName`='spell_gen_proc_not_self_aura' WHERE `spell_id`=70803 AND `ScriptName` = 'spell_gen_proc_not_self';\n"""
+    sql_expected ="""UPDATE `spell_script_names` SET `ScriptName`='spell_gen_proc_not_self_aura' WHERE `spell_id`=70803 AND `ScriptName`='spell_gen_proc_not_self';\n"""
     assert sql == sql_expected
 
 @pytest.mark.skipif(os.getenv(ENV_GITHUB_CI) is not None, reason="skip this test in CI")
