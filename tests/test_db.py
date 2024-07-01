@@ -37,7 +37,7 @@ def test_db_write_sql():
     assert sql == sql_expected
 
 @pytest.mark.skipif(os.getenv(ENV_GITHUB_CI) is not None, reason="skip this test in CI")
-def test_db_write_sql():
+def test_db_write_sql_with_original():
     script_name_original = 'spell_gen_proc_not_self'
     script_name = 'spell_gen_proc_not_self_aura'
     result = db_lookup_ids(script_name_original)
