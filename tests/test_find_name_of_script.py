@@ -6,9 +6,12 @@ def test_always_passes():
     assert True
 
 @pytest.mark.parametrize('lines, expect',  [
-    (['class spell_halion_combustion_consumption : public SpellScriptLoader'], 'spell_halion_combustion_consumption'),
-    (['class spell_q11515_fel_siphon_dummy : public SpellScriptLoader'], 'spell_q11515_fel_siphon_dummy'),
-    (['class spell_q10929_fumping : SpellScriptLoader'], 'spell_q10929_fumping'),
+    ([
+        'class spell_yogg_saron_malady_of_the_mind : public SpellScriptLoader',
+        '{',
+        'public:',
+        '    spell_yogg_saron_malady_of_the_mind() : SpellScriptLoader("spell_yogg_saron_malady_of_the_mind_something") { }'
+        ], 'spell_yogg_saron_malady_of_the_mind_something')
 ])
 
 def test_find_name_of_script(lines, expect):
