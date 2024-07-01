@@ -27,12 +27,25 @@ def find_start_last_index(lines_to_search):
     raise ValueError
 
 def find_name_of_script(lines_to_search, start_index=0):
+    count = 0
+    class_name_found = False
+    loader_name = None
     for line in lines_to_search[start_index:]:
         logger.debug(f"{line=}")
-        if 'class ' in line and ("public SpellScriptLoader" in line or ": SpellScriptLoader" in line):
-            name = re.findall(r'class ([\w_]+)', line)[0]
-            logger.debug(f"{name=}")
-            return name
+        if ': SpellScriptLoader(' not in line and 'class ' in line and ("public SpellScriptLoader" in line or ": SpellScriptLoader" in line):
+            class_name = re.findall(r'class ([\w_]+)', line)[0]
+            logger.debug(f"{class_name=}")
+            class_name_found = True
+        if ': SpellScriptLoader(' in line:
+            loader_name_found = re.findall(r'SpellScriptLoader\("([\w_]+)"\)', line)
+            if len(loader_name_found) > 0:
+                logger.debug(f"{line=} loader_name not found: skipping")
+                loader_name = loader_name_found[0][:]
+                logger.debug(f"{loader_name=}")
+        if class_name_found:
+            count +=1
+        if count >= 4:
+            return loader_name if loader_name is not None else class_name
 
 def get_script_type(lines_to_search, start_index=0) -> ScriptType:
     isAuraScript = None
