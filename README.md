@@ -40,7 +40,7 @@ The `acore-spellscript-refactor` package is published on [Test PyPI](https://tes
 2. **Install from Test PyPI**  
    To install the latest version of `acore-spellscript-refactor` from Test PyPI, use the following command:
    ```bash
-   pip install -i https://test.pypi.org/simple/ acore-spellscript-refactor
+   pip install acore-spellscript-refactor
    ```
 
    This installs the package and all required dependencies from the Test PyPI repository.

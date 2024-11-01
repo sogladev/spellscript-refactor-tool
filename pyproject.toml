@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "acore_spellscript_refactor"
 readme = "README.md"
 description = "tool that finds the first SpellScript by searching for public SpellScriptLoader in a file and converts it to use registry macros"
-version = "1.8.2"
+version = "1.8.4"
 requires-python = ">=3.10"
 dependencies = ['mysql-connector-python >= 8.0.0']
 
